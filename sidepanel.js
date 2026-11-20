@@ -638,6 +638,11 @@ function selectionNode() {
       on: { click: reselectElement }
     })
   ]));
+  if (selection.previewUrl)
+    root.appendChild(h("img", {
+      className: "selection-preview",
+      attrs: { src: selection.previewUrl, alt: "Cropped preview of the selected element" }
+    }));
   const agent = agentLabel(state.claim?.agent);
   const textarea = h("textarea", {
     className: "textarea",

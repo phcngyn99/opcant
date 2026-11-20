@@ -1351,11 +1351,14 @@ async function submitPanelAnnotation(tabId, message) {
   const viewport = session.viewport;
   const comment = typeof message.comment === "string" ? message.comment.trim() : "";
   await exitSelectionSession(tabId);
-  await new Promise((resolve) => setTimeout(resolve, 60));
-  const tab = await chrome.tabs.get(tabId);
-  const screenshot = await captureVisibleTabWithTimeout(tab.windowId);
-  const cropped = await cropScreenshot(tabId, screenshot, element.rect, viewport);
-  const dataUrl = cropped || screenshot;
+  let dataUrl = session.previewUrl;
+  if (!dataUrl) {
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    const tab = await chrome.tabs.get(tabId);
+    const screenshot = await captureVisibleTabWithTimeout(tab.windowId);
+    const cropped = await cropScreenshot(tabId, screenshot, element.rect, viewport);
+    dataUrl = cropped || screenshot;
+  }
   logExtension("Captured annotation screenshot from side panel", {
     tabId,
     cropped: !!cropped,
@@ -2176,8 +2179,19 @@ async function runMessageAction(message, tab, sender) {
       session.phase = "locked";
       session.element = message.element || null;
       session.viewport = message.viewport || null;
+      try {
+        const tab = await chrome.tabs.get(selectionTabId);
+        const shot = await captureVisibleTabWithTimeout(tab.windowId);
+        const cropped = await cropScreenshot(selectionTabId, shot, session.element?.rect, session.viewport);
+        session.previewUrl = cropped || shot || null;
+      } catch (error) {
+        warnExtension("Preview capture failed", {
+          tabId: selectionTabId,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
     }
-    return { ok: true };
+    return { ok: true, preview: Boolean(session?.previewUrl) };
   }
   if (message.type === "selection_cancel" || message.type === "selection_exited") {
     const selectionTabId = sender?.tab?.id;
