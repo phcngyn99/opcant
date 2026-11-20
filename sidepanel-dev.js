@@ -161,6 +161,9 @@
     get_queue_for_copy: () => ({ ok: true, text: "" })
   };
 
+  if (params.has("activity"))
+    responses.connect_tab_to_session({ session: { id: "s1" } });
+
   const runtime = {
     id: "dev-preview",
     onMessage: {

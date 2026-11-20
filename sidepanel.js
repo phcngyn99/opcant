@@ -747,7 +747,7 @@ function queueNode() {
           : `Send failed: ${state.sendFailed.error}. Copy unsent to paste them manually.`
       }),
       h("button", {
-        className: "btn small primary",
+        className: "btn small",
         attrs: { type: "button" },
         disabled: state.copying || state.pending,
         on: { click: copyUnsent }
