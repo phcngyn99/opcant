@@ -95,6 +95,17 @@ Alt+Shift+S   open panel + start selection
 
 Rebind: `chrome://extensions/shortcuts`.
 
+## Finalize a working session
+
+```bash
+./scripts/finalize.sh      # asks first
+./scripts/finalize.sh -y   # no prompt
+```
+
+Removes clean temporary worktrees, deletes merged `feature/*` branches, fetches
+with prune, pushes `develop`, fast-forwards `main`, pushes `main`, then removes
+leftover temp directories. Requires a clean tree. Refuses to force anything.
+
 ## Development
 
 ```bash
