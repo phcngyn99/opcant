@@ -693,13 +693,6 @@ function selectionNode() {
       text: state.pending ? "Adding…" : "Add to queue",
       attrs: { type: "button" },
       disabled: state.pending,
-      on: { click: () => submitSelection(false) }
-    }),
-    h("button", {
-      className: "btn",
-      text: "Add & finish",
-      attrs: { type: "button" },
-      disabled: state.pending,
       on: { click: () => submitSelection(true) }
     }),
     h("button", {
