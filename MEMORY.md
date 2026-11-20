@@ -67,3 +67,12 @@ Newest last. Do not edit or delete entries; correct mistakes with a new entry.
 - Docs to keep in sync on behaviour changes: `README.md`, `CUSTOM.md`,
   `docs/install-guide.md`.
 - Finalize script lives outside the repo, in `$TMPDIR/finalize-opcant.sh`.
+
+## 2026-11-20 — alignment pass
+
+- Reload moved from a text button into the header icon row (refresh icon), so
+  the header is one line: avatar + title, reload, theme, back.
+- Header grid is `minmax(0,1fr) auto auto auto`; adding any header control means
+  bumping the track count or it wraps.
+- Queue thumbnails use `object-fit: contain` at 52x34: whole element visible,
+  no crop, no layout shift.

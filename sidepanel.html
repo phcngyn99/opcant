@@ -297,11 +297,10 @@
       }
       .queue-shot {
         flex: none;
-        width: 44px;
-        height: 32px;
+        width: 52px;
+        height: 34px;
         margin-top: 1px;
-        object-fit: cover;
-        object-position: left top;
+        object-fit: contain;
         border-radius: var(--r-sm);
         box-shadow: 0 0 0 1px var(--line);
         background: var(--color-background-body);
@@ -407,7 +406,7 @@
       .history-error { margin-top: var(--spacing-1); color: var(--red-ink); font-size: var(--font-size-sm); word-break: break-word; line-height: 1.45; }
 
       .linked {
-        display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: start; gap: var(--spacing-2);
+        display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: start; gap: var(--spacing-2);
       }
       .header .title {
         min-width: 0;
@@ -471,19 +470,6 @@
         flex: none;
       }
       .activity-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .activity-row {
-        display: flex;
-        align-items: center;
-        min-width: 0;
-        flex-wrap: nowrap; gap: var(--spacing-2);
-      }
-      .activity-reload {
-        margin-top: var(--spacing-2);
-        padding: var(--spacing-1) var(--spacing-3);
-        font-size: var(--font-size-sm);
-        letter-spacing: 0.045em;
-
-      }
       .activity-time {
         font-weight: 500;
         letter-spacing: 0;
@@ -668,7 +654,6 @@
 
 
 
-      .activity-reload.btn.small { padding: var(--spacing-1) var(--spacing-2); min-height: 28px; font-size: var(--font-size-sm); text-transform: none; letter-spacing: normal; }
 
       .header > .row:first-child { min-width: 0; align-items: start; }
       .header > .row:last-child { flex: none; }

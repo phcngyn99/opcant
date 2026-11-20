@@ -1024,17 +1024,7 @@ function activityNode() {
     h("span", { className: "activity-label", text: label }),
     time ? h("span", { className: "activity-time", attrs: { "aria-live": "off" }, text: time }) : null
   ]);
-  if (activity.state !== "done")
-    return chip;
-  return h("div", { className: "activity-row" }, [
-    chip,
-    h("button", {
-      className: "btn small activity-reload",
-      text: "Reload page",
-      attrs: { type: "button", title: "Reload this page to see the agent's changes" },
-      on: { click: reloadPage }
-    })
-  ]);
+  return chip;
 }
 
 async function clearHistory() {
@@ -1115,6 +1105,11 @@ function linkedChatNode() {
       ]),
       activityNode()
     ]),
+    state.activity?.state === "done" ? h("button", {
+      className: "icon-btn",
+      attrs: { type: "button", title: "Reload the page to see the changes", "aria-label": "Reload the page" },
+      on: { click: reloadPage }
+    }, [icon("refresh")]) : null,
     themeButtonNode(),
     h("button", {
       className: "icon-btn",
