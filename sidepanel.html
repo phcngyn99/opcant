@@ -6,11 +6,7 @@
     <title>OpenCode Annotation</title>
     <link rel="stylesheet" href="vendor/astryx/theme.css">
     <style>
-      /* Tokens come from the Astryx neutral theme (vendor/astryx/theme.css).
-         Astryx resolves light/dark through light-dark(), so there is no second
-         palette block: one set of aliases serves both themes. */
       :root {
-        /* The vendored theme references spacing tokens without defining them. */
         --spacing-1: 0.25rem;
         --spacing-2: 0.5rem;
         --spacing-3: 0.75rem;
@@ -49,8 +45,6 @@
         --shadow-soft: var(--shadow-low);
       }
       * { box-sizing: border-box; }
-      /* The parts we did not draw still carry the palette: the panel's own
-         scrollbar and the text selection. */
       html { scrollbar-width: thin; scrollbar-color: var(--color-border-emphasized) transparent; }
       ::selection { background: var(--peri); color: var(--on-peri); }
       body {
@@ -79,7 +73,6 @@
       }
       .contents { display: contents; }
 
-      /* Pinned header and send bar */
       .chat-header {
         position: sticky;
         top: 0;
@@ -96,7 +89,6 @@
       }
       .send-bar .btn { padding: var(--spacing-3) var(--spacing-4); font-size: var(--font-size-base); }
 
-      /* Buttons: the primary one carries the periwinkle offset shadow */
       .btn {
         display: inline-flex;
         align-items: center;
@@ -150,7 +142,6 @@
       .icon-btn:hover:not(:disabled) { background: var(--wash); color: var(--ink); }
       .icon-btn:disabled { color: var(--ink-2); cursor: default; }
 
-      /* Toasts and small status */
       .toast {
         position: fixed;
         left: var(--spacing-4);
@@ -190,7 +181,6 @@
         text-align: center;
       }
 
-      /* Layout helpers */
       .header { display: flex;  justify-content: space-between; gap: var(--spacing-2);
         align-items: start;
       }
@@ -214,7 +204,6 @@
         padding: var(--spacing-4); gap: var(--spacing-4); box-shadow: var(--shadow-low);
       }
 
-      /* Picking an element: the dashed periwinkle box from the store art */
       .picking {
         display: flex;
         align-items: center;
@@ -227,7 +216,6 @@
         font-weight: 600;
       }
 
-      /* Composer */
       .textarea {
         width: 100%;
         resize: vertical;
@@ -251,7 +239,6 @@
         background: transparent; padding: 0; font-size: var(--font-size-sm);
       }
 
-      /* Queue: numbered ink badges like the store art callouts */
       .queue-item {
         display: flex;
         align-items: flex-start;
@@ -307,7 +294,6 @@
       }
       .send-failure-text { line-height: 1.45; word-break: break-word; }
 
-      /* History */
       .history-item {
         display: flex;
         align-items: flex-start;
@@ -348,7 +334,6 @@
       }
       .history-error { margin-top: var(--spacing-1); color: var(--red-ink); font-size: var(--font-size-sm); word-break: break-word; line-height: 1.45; }
 
-      /* Linked chat header */
       .linked {
         display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: start; gap: var(--spacing-2);
       }
@@ -379,9 +364,6 @@
       .linked-project { display: inline-flex; align-items: center; gap: var(--spacing-2); min-width: 0;
         padding: var(--spacing-1) var(--spacing-2); background: var(--surface); border-radius: var(--r-sm); max-width: 100%;
       }
-      /* Agent activity: a square status chip like the queue badges, because the
-         world rounds nothing but status dots. One row, so it never pushes the
-         header taller than the label it reports on. */
       .activity {
         display: inline-flex;
         align-items: center;
@@ -431,7 +413,6 @@
       @keyframes activity-pulse { 50% { opacity: 0.3; } }
       @media (prefers-reduced-motion: reduce) { .activity .dot { animation: none !important; } }
 
-      /* Picker: search, agent filter, project chips */
       .search {
         width: 100%;
         padding: var(--spacing-3) var(--spacing-4);
@@ -453,7 +434,6 @@
       .agent-tab {
         min-width: 32px;
         height: 32px;
-        /* Nested inside the tab group: its radius minus padding and border. */
         border-radius: var(--r);
         font: 600 var(--font-size-sm)/1 var(--sans);
         border: 0;
@@ -506,7 +486,6 @@
       .chip.active { background: var(--ink); color: var(--on-ink); box-shadow: none; }
       .chip.toggle { flex: none; border-style: dashed; color: var(--ink-2); }
       .chip > span:not(.project-dot) { max-width: 170px; overflow: hidden; text-overflow: ellipsis; }
-      /* With room for one project, its chip shrinks to fit instead of clipping. */
       .chips.single .chip { flex-shrink: 1; min-width: 0; }
       .chips.single .chip:first-child { flex-shrink: 0; }
       .chips-more {
@@ -537,7 +516,6 @@
       }
       .search-clear { width: 18px; height: 18px; font: 600 var(--font-size-sm)/1 var(--sans); }
 
-      /* Chat list */
       .list { display: flex; flex-direction: column; gap: var(--spacing-1); padding: var(--spacing-1) 0; }
       .session-row {
         display: flex;
@@ -618,7 +596,6 @@
       }
       .bulk-count { font-weight: 600; flex: 1 1 auto; min-width: 0; }
 
-      /* Empty state */
       .empty-icon { color: var(--ink-3); margin-bottom: var(--spacing-1); }
       .empty-title { font-weight: 600;  margin-bottom: var(--spacing-2);
         font-size: var(--font-size-lg);
@@ -626,12 +603,10 @@
       .empty-text { margin: 0 0 var(--spacing-2); color: var(--ink-2); line-height: 1.45; }
       .empty-list { margin: 0; padding-left: var(--spacing-5); color: var(--ink-2); line-height: 1.55; }
 
-      /* Motion */
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after { animation: none !important; transition: none !important; }
       }
 
-      /* Compact side-panel hierarchy: raised editor, quiet lists, open footer. */
 
       .linked > .agent-glyph { margin-top: var(--spacing-1); }
 

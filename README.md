@@ -28,49 +28,72 @@ OpenCode / AshleyCode only — Claude Code support is removed.
   and starts element selection.
 - **Shadows instead of borders** — all edges are `box-shadow` rings.
 
-## Install the plugin
+## Install
 
-Copy or symlink `plugin/` somewhere stable, then add it to
-`~/.config/opencode/opencode.jsonc`:
+Full detail: [docs/install-guide.md](docs/install-guide.md) — the same guide originally written to `~/Downloads/opencode-annotate-guide/`, now kept in the repo so cloners get it.
+
+### 1. Plugin
+
+Symlink repo plugin into OpenCode config dir. Absolute path in config fails silently.
+
+```bash
+ln -sfn "$PWD/plugin" ~/.config/opencode/plugins/opencode-annotate-repo
+```
+
+Add to `~/.config/opencode/opencode.jsonc`:
 
 ```jsonc
 "plugins": [
-  "/Users/<you>/Work/not-finn/opcant/plugin/v2/index.js"
+  "./plugins/opencode-annotate-repo/v2/index.js"
 ]
 ```
 
-Restart OpenCode. Verify:
+Restart OpenCode. Check:
 
 ```bash
-curl -s http://127.0.0.1:39240/activity | head -c 200
+curl -s http://127.0.0.1:39240/status | grep -o '"activities"'
 ```
 
-`{"activities":[...]}` means the forked plugin is live. `Not found` means the
-stock plugin came back — check the config path.
+`"activities"` printed = fork plugin live. Empty = stock plugin loaded.
 
-## Install the extension
+### 2. Extension
 
-1. `chrome://extensions`
-2. Enable **Developer mode**
-3. **Load unpacked** → this repo root
-4. Pin the icon
+```
+chrome://extensions
+Developer mode ON
+Load unpacked
+pick this repo folder
+pin "OpenCode Annotate (custom)"
+```
 
-Version shows as `1.6.1-custom.1`.
+### 3. Use
 
-## Use
+```
+open project in OpenCode
+open page in Chrome
+Alt+Shift+A        panel
+pick chat          link tab
+Select element     click element
+write instruction
+Add & finish       Send
+```
 
-1. Start OpenCode in the project you are editing.
-2. Open the page in Chrome, press `Alt+Shift+A`.
-3. Pick a chat to link the tab.
-4. **Select element** → click the element → write the instruction.
-5. **Add & finish** → **Send**.
+Done = chip `Finished` + `Reload page` button. Tab badge flips `●` to `✓`.
 
-When the run ends the panel shows `Finished` plus a **Reload page** button, and
-the toolbar icon on that tab switches from `●` to `✓`.
+First send asks site access. Allow it. Screenshot needs `<all_urls>`; `activeTab` drops on navigation.
 
-Chrome asks for site access the first time. It uses `<all_urls>` because
-`chrome.tabs.captureVisibleTab` accepts only that or `activeTab`, and
-`activeTab` is dropped on navigation.
+### 4. Theme
+
+Header icon cycles `Auto -> Light -> Dark`. Saves in `chrome.storage.local`.
+
+### 5. Shortcuts
+
+```
+Alt+Shift+A   open panel
+Alt+Shift+S   open panel + start selection
+```
+
+Rebind: `chrome://extensions/shortcuts`.
 
 ## Development
 

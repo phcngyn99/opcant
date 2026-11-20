@@ -1,7 +1,3 @@
-// sidepanel-dev.js - chrome-API shim so the side panel UI can be edited on a plain
-// localhost server. No-ops when the real extension APIs are present, and stubs a
-// fake session + queue so every view renders. Loaded before sidepanel.js in
-// sidepanel.html; it is inert in the shipped extension.
 (function () {
   if (window.chrome?.runtime?.id)
     return; // running as a real extension - leave the real APIs alone
@@ -15,33 +11,24 @@
     ok: true,
     context: { host: "127.0.0.1", port: 39240 },
     sessions: [
-      // opencode-annotate-extension
       { id: "s1", title: "Fix sticky header on scroll", directory: "/Users/jackevans/Code/tools/opencode-annotate-extension", updatedAt: ago(4) },
       { id: "s2", title: "Refactor session picker into components", directory: "/Users/jackevans/Code/tools/opencode-annotate-extension", updatedAt: ago(38) },
       { id: "s3", title: "Queue send retries + error copy", directory: "/Users/jackevans/Code/tools/opencode-annotate-extension", updatedAt: ago(190) },
-      // creator-list
       { id: "s6", title: "Ship 1.5.0: side panel rebuild", directory: "/Users/jackevans/Code/creator-list", updatedAt: ago(12) },
       { id: "s7", title: "Staging migration broke RLS policy", directory: "/Users/jackevans/Code/creator-list", updatedAt: ago(95) },
       { id: "s8", title: "Stripe webhook duplicate events", directory: "/Users/jackevans/Code/creator-list", updatedAt: ago(2600) },
-      // jacks-seo
       { id: "s9", title: "Rewrite landing hero copy", directory: "/Users/jackevans/Code/jacks-seo", updatedAt: ago(55) },
       { id: "s10", title: "Keyword research: pSEO cluster", directory: "/Users/jackevans/Code/jacks-seo", updatedAt: ago(4300) },
-      // acme-site
       { id: "s12", title: "Client feedback round 2", agent: "opencode", directory: "/Users/jackevans/Code/clients/acme-site", updatedAt: ago(18) },
       { id: "s13", title: "Hero video autoplay on iOS", directory: "/Users/jackevans/Code/clients/acme-site", updatedAt: ago(700) },
-      // northwind-dashboard
       { id: "s14", title: "Chart tooltips cut off on mobile", agent: "opencode", directory: "/Users/jackevans/Code/clients/northwind-dashboard", updatedAt: ago(27) },
       { id: "s15", title: "CSV export drops timezone", directory: "/Users/jackevans/Code/clients/northwind-dashboard", updatedAt: ago(900) },
       { id: "s16", title: "Migrate charts off the old lib", directory: "/Users/jackevans/Code/clients/northwind-dashboard", updatedAt: ago(5200) },
-      // sideproject
       { id: "s17", title: "Weekly digest email layout", directory: "/Users/jackevans/Code/personal/sideproject", updatedAt: ago(150) },
-      // infra-terraform
       { id: "s18", title: "Add staging VPC peering", directory: "/Users/jackevans/Code/ops/infra-terraform", updatedAt: ago(320) },
       { id: "s19", title: "Rotate the leaked API token", directory: "/Users/jackevans/Code/ops/infra-terraform", updatedAt: ago(72) },
-      // rag-lab
       { id: "s20", title: "Chunking strategy comparison", agent: "opencode", directory: "/Users/jackevans/Code/experiments/rag-lab", updatedAt: ago(1100) },
       { id: "s21", title: "Eval harness for retrieval", directory: "/Users/jackevans/Code/experiments/rag-lab", updatedAt: ago(8600) },
-      // handbook
       { id: "s22", title: "Onboarding checklist rewrite", agent: "opencode", directory: "/Users/jackevans/Code/docs/handbook", updatedAt: ago(2400) }
     ]
   };
@@ -57,8 +44,6 @@
     settingsOpen: false
   };
 
-  // Activity badge preview: ?activity=working|done|failed|queued|cancelled|none
-  // with ?activityAge=<seconds>. window.__panelActivity("done") flips it live.
   const params = new URLSearchParams(window.location.search);
   const activityAge = Number(params.get("activityAge") || 8);
   function makeActivity(stateName, age = activityAge) {
@@ -172,8 +157,6 @@
     sendMessage: async (message) => {
       const handler = responses[message?.type];
       const response = handler ? handler(message) : { ok: true };
-      // The real background broadcasts state changes; emulate that so the
-      // panel refreshes after connect/disconnect/queue mutations.
       if (["connect_tab_to_session", "disconnect_tab", "panel_submit_annotation", "clear_queue", "remove_queued_annotation", "send_queued_annotations", "close_session", "panel_cancel_selection"].includes(message?.type))
         setTimeout(() => listeners.forEach((fn) => fn({ type: "panel_state_changed" })), 0);
       return response;

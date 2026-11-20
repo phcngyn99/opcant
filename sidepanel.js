@@ -1,4 +1,3 @@
-// sidepanel.js - OpenCode annotation side panel UI
 const state = {
   loading: true,
   theme: "system",
@@ -118,7 +117,6 @@ const AGENTS = {
   opencode: { label: "OpenCode", icon: "opencode", closable: true }
 };
 
-// Sessions without an agent field come from the OpenCode plugin.
 function agentOf(agent) {
   return AGENTS[agent] || AGENTS.opencode;
 }
@@ -198,9 +196,6 @@ async function refreshState() {
   } catch {}
   state.loading = false;
   syncActivityTitle();
-  // A 2.5s poll that changes nothing should not rebuild the panel: rebuilding
-  // drops hover, restarts entrance animations, and makes the live region
-  // re-announce the same status to a screen reader.
   const signature = stateSignature();
   if (signature === state.lastSignature) {
     updateActivityClock();
@@ -210,8 +205,6 @@ async function refreshState() {
   }
 }
 
-// Everything render() draws, minus values that only live in the DOM (the
-// draft typed into the textarea) or that trigger their own render (toasts).
 function stateSignature() {
   const claim = state.claim;
   return JSON.stringify({
@@ -227,8 +220,6 @@ function stateSignature() {
   });
 }
 
-// Announce only real transitions: the first read for a chat is the current
-// state, not news, and a finished agent is worth one toast at most.
 function applyActivityChange(previousState) {
   const nextState = state.activity?.state || null;
   const claimKey = state.claim?.sessionId || null;
@@ -568,8 +559,6 @@ function projectNameFor(directory) {
   return segments.length ? segments[segments.length - 1] : directory || "Unknown project";
 }
 
-// Stable color per project directory. FNV-1a then the golden angle, because a
-// plain mod-360 hash clusters paths that share a prefix into one hue.
 function projectHue(directory) {
   let hash = 2166136261;
   for (const ch of directory || "")
@@ -606,8 +595,6 @@ function toastNode() {
   });
 }
 
-// One primary button on screen at a time: Add to queue while composing,
-// otherwise Send (bottom bar) once something is queued, else Select element.
 function actionNode() {
   const selection = state.selection;
   if (selection?.phase === "hover") {
@@ -889,9 +876,6 @@ const ACTIVITY_LABELS = {
   cancelled: "Stopped"
 };
 
-// Working counts up. A terminal state shows the label only: "Finished" aged
-// by a relative timestamp reads as noise, and the state already fades after
-// ten minutes.
 function formatActivityTime(activity, now = Date.now()) {
   const since = activity?.since ? Date.parse(activity.since) : NaN;
   if (!Number.isFinite(since))
@@ -907,8 +891,6 @@ function formatActivityTime(activity, now = Date.now()) {
   return seconds > 1 ? elapsed : "";
 }
 
-// A terminal state ages out after ten minutes instead of pinning a stale
-// "Finished" to the header of a chat that has moved on.
 function activityStale(activity) {
   if (!activity?.state)
     return true;
@@ -965,8 +947,6 @@ async function reloadPage() {
   }
 }
 
-// The side panel's title strip is chrome we did not draw, but it is the one
-// place the agent's state stays visible while the queue is scrolled away.
 function syncActivityTitle() {
   const base = "OpenCode Annotation";
   const stateName = state.claim ? state.activity?.state : null;
@@ -982,8 +962,6 @@ function syncActivityTitle() {
     document.title = next;
 }
 
-// The clock is the only thing that changes on an unchanged poll, so it updates
-// in place instead of paying for a rebuild every second.
 function updateActivityClock() {
   const time = document.querySelector(".activity-time");
   if (!time)
@@ -1069,9 +1047,6 @@ function buildUI() {
 const FOCUSABLE = "button, input, textarea";
 
 function render() {
-  // The whole UI is rebuilt on every render, so remember which control had
-  // focus (and the caret) and put it back. Otherwise toasts and background
-  // refreshes drop focus, even in the middle of typing a comment.
   const active = document.activeElement;
   let focusIndex = -1;
   let selStart = null;
@@ -1084,9 +1059,6 @@ function render() {
     }
   }
   const activeTag = active?.tagName;
-  // Slide the incoming view in the travel direction when switching between
-  // the picker and a connected chat. The class lives only on this element,
-  // so later re-renders stay static.
   const view = state.claim ? "chat" : "picker";
   const viewChanged = state.lastView != null && state.lastView !== view;
   state.lastView = view;
@@ -1126,7 +1098,6 @@ chrome.tabs.onActivated.addListener(() => {
   refreshState();
 });
 
-// Resize fires per pixel while dragging the panel edge; rebuild once a frame.
 let resizeFrame = 0;
 window.addEventListener("resize", () => {
   if (resizeFrame)
@@ -1153,8 +1124,6 @@ const THEME_LABEL = { system: "Auto", light: "Light", dark: "Dark" };
 function applyTheme(theme) {
   state.theme = THEME_ORDER.includes(theme) ? theme : "system";
   const root = document.documentElement;
-  // Astryx theme.css sets color-scheme for html[data-theme]; removing the
-  // attribute hands control back to prefers-color-scheme.
   if (state.theme === "system")
     delete root.dataset.theme;
   else
@@ -1198,8 +1167,6 @@ function cycleTheme() {
   fetchSessions();
 })();
 
-// Tell the worker whether this panel is on screen, so it can skip the OS
-// notification when the in-panel toast already covers the same transition.
 async function reportVisibility() {
   try {
     await sendPanelMessage({ type: "panel_visibility", visible: !document.hidden });
@@ -1208,8 +1175,6 @@ async function reportVisibility() {
 document.addEventListener("visibilitychange", reportVisibility);
 reportVisibility();
 
-// Safety refresh. Background broadcasts panel_state_changed whenever activity
-// changes, so this only catches a missed message or a slow reconnect.
 setInterval(() => {
   if (!state.claim || state.loading || state.pending || document.hidden)
     return;
@@ -1219,7 +1184,6 @@ setInterval(() => {
   refreshState();
 }, 10000);
 
-// The elapsed time under the badge ticks every second without a rebuild.
 setInterval(() => {
   if (!state.claim || !state.activity || document.hidden)
     return;

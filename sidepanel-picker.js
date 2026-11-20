@@ -1,6 +1,3 @@
-// sidepanel-picker.js - chat picker: session list, search, agent filter and
-// project chips. Shares state, h() and render() with sidepanel.js (classic
-// scripts share one global scope); loaded before it in sidepanel.html.
 
 async function fetchSessions() {
   state.fetchingSessions = true;
@@ -49,8 +46,6 @@ async function postCloseSession(session) {
   });
 }
 
-// Order of session ids as currently visible in the list (filtered, newest first).
-// Rebuilt on every sessionsNode render; used for shift-click range selection.
 let lastVisibleSessionIds = [];
 
 function pruneSessionSelection() {
@@ -100,8 +95,6 @@ function toggleSessionSelected(session, event) {
   render();
 }
 
-// Select mode swaps row clicks from "connect" to "tick" and shows the
-// checkboxes and the close bar; leaving it drops the selection.
 function toggleSelectMode() {
   state.selectMode = !state.selectMode;
   state.selectedSessionIds = new Set();
@@ -164,9 +157,6 @@ function sortedSessionGroups(sessionList) {
   return groups;
 }
 
-// Rows get a staggered entrance animation only when this is armed (initial
-// load, project-chip toggles) - the whole UI re-renders on every keystroke, so
-// a permanent animation would flicker while typing.
 function animateListOnce() {
   state.animateList = true;
   render();
@@ -177,7 +167,6 @@ function animateListOnce() {
   }, 400);
 }
 
-// Sessions are only OpenCode/AshleyCode; every chat can be closed from here.
 function sessionSelectNode(item, isSelected) {
   return h("input", {
     className: "session-select",
@@ -209,7 +198,6 @@ function sessionRowNode(item, index, linkedId) {
   }
   return h("div", {
     className: sessionRowClass(item, isSelected),
-    // Cap the stagger so long lists don't trickle in for seconds.
     attrs: { style: `--i:${Math.min(index, 12)}` }
   }, [
     state.selectMode ? sessionSelectNode(item, isSelected) : null,
@@ -359,9 +347,6 @@ function sessionsNode() {
     return root;
   }
   if (groups.length > 1) {
-    // Collapsed: All + the latest projects on one auto-fitted line, with a
-    // "+N projects" toggle pinned right. Expanded: the line keeps the latest
-    // projects and the remaining ones flow beneath it.
     const showAllChips = state.showAllProjects || searching;
     const chipDefs = [{ label: `All (${sessions.length})`, value: "" }].concat(groups.map((group) => ({
       label: `${projectNameFor(group.directory)} (${group.items.length})`,
@@ -508,9 +493,6 @@ function animateChipsOnce() {
   }, 400);
 }
 
-// Collapsed chips: show as many of the latest projects (up to 3) as fit on one
-// line beside the toggle. Measures the rendered chips once and re-renders at
-// most once; chipFit is reset to null by anything that changes the chips.
 function fitProjectChips() {
   if (state.chipFit != null)
     return;
