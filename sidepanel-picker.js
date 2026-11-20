@@ -222,17 +222,6 @@ function closeInactiveNode() {
   const inactive = (state.sessions || []).filter((item) => item.running === false);
   if (!inactive.length && !(state.sessions || []).length)
     return null;
-  const confirming = state.closeInactiveConfirm;
-  if (confirming) {
-    return h("div", { className: "menu-wrap" }, [
-      h("button", {
-        className: "btn small confirm",
-        text: `Close ${inactive.length}`,
-        attrs: { type: "button", title: "Click again to close these chats" },
-        on: { click: () => closeInactiveSessions(inactive) }
-      })
-    ]);
-  }
   return h("div", { className: "menu-wrap" }, [
     h("button", {
       className: "icon-btn",
@@ -243,7 +232,7 @@ function closeInactiveNode() {
       inactive.length ? h("button", {
         className: "menu-item",
         attrs: { type: "button", role: "menuitem" },
-        on: { click: () => { state.chatMenu = false; state.closeInactiveConfirm = true; render(); } }
+        on: { click: () => { state.chatMenu = false; closeInactiveSessions(inactive); } }
       }, [icon("trash"), h("span", { text: `Close ${inactive.length} inactive` })]) : null,
       h("button", {
         className: "menu-item",
@@ -309,7 +298,6 @@ function sessionsNode() {
   const root = h("div", { className: "section" });
   root.appendChild(h("div", { className: "header" }, [
     h("div", { className: "row" }, [
-      h("img", { attrs: { src: "icons/icon48.png", alt: "", class: "logo" } }),
       h("div", { className: "title", text: "Connect this tab to a chat" })
     ]),
     h("div", { className: "row" }, [

@@ -61,9 +61,6 @@
       :focus-visible { outline: 2px solid var(--peri-ink); outline-offset: 2px; }
       .ic { flex: none; }
       .ic * { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-      .logo { width: 22px; height: 22px; border-radius: var(--r-sm); flex: none;
-        margin-top: var(--spacing-1);
-      }
       .root { display: flex; flex-direction: column;
         min-height: calc(100dvh - 2 * var(--spacing-4)); gap: var(--spacing-6);
       }
@@ -85,7 +82,7 @@
         position: sticky;
         bottom: 0;
         z-index: 10;
-        display: flex; justify-content: flex-end; margin: auto calc(-1 * var(--spacing-4)) calc(-1 * var(--spacing-4)); padding: var(--spacing-4); background: var(--paper); box-shadow: none;
+        display: flex; margin: auto calc(-1 * var(--spacing-4)) calc(-1 * var(--spacing-4)); padding: var(--spacing-4); background: var(--paper); box-shadow: none;
       }
       .send-bar .btn { padding: var(--spacing-3) var(--spacing-4); font-size: var(--font-size-base); }
 
@@ -198,13 +195,18 @@
       .row.end { justify-content: flex-end; }
       .row.between { justify-content: space-between; align-items: flex-start; }
       .section-head { display: flex; align-items: center; gap: var(--spacing-1); }
-      .section-head .title { display: flex; align-items: center; gap: var(--spacing-2); }
+      .section-head .title {
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: var(--font-size-xs);
+        color: var(--ink-2);
+ display: flex; align-items: center; gap: var(--spacing-2); }
       .card {
         border-radius: var(--r-lg);
         display: flex;
         flex-direction: column;
         background: var(--surface);
-        padding: var(--spacing-4); gap: var(--spacing-4); box-shadow: var(--shadow-low);
+        padding: var(--spacing-4); gap: var(--spacing-4); box-shadow: var(--shadow-med);
       }
 
       .picking {
@@ -261,7 +263,9 @@
         padding: var(--spacing-3) var(--spacing-2);
         gap: var(--spacing-2);
         box-shadow: var(--shadow-low);
+        transition: box-shadow 140ms ease, transform 140ms ease;
       }
+      .queue-item:hover { box-shadow: var(--shadow-med); transform: translateY(-1px); }
       .menu-wrap { position: relative; flex: none; }
       .menu {
         position: absolute;
@@ -297,10 +301,6 @@
       .queue-item .queue-item-actions { opacity: 0; transition: opacity 120ms ease; }
       .queue-item:hover .queue-item-actions,
       .queue-item:focus-within .queue-item-actions { opacity: 1; }
-      .queue-item:hover {
-        background: var(--surface);
-        box-shadow: var(--shadow-low);
-      }
       .queue-shot-btn {
         flex: none;
         padding: 0;
@@ -366,7 +366,7 @@
         box-shadow: 0 0 0 1px var(--color-accent);
         background: var(--field);
         color: var(--ink);
-        font: 500 var(--font-size-base)/1.4 var(--sans);
+        font: 500 var(--font-size-base)/1.5 var(--sans);
         resize: vertical;
       }
       .queue-selector {
@@ -450,7 +450,7 @@
       }
       .header .row:first-child { min-width: 0; flex: 1 1 auto; }
       .session-icon {
-        font-size: 13px;
+        font-size: 18px;
         line-height: 1;
         flex: none;
         margin-right: var(--spacing-1);
@@ -462,8 +462,9 @@
         min-width: 0;
         font-weight: 600;
         letter-spacing: -0.01em;
-        font-size: var(--font-size-xl);
-        line-height: 1.4;
+        font-size: var(--font-size-2xl);
+        line-height: 1.25;
+        letter-spacing: -0.02em;
       }
       .linked-label > span:last-child {
         overflow: hidden;
@@ -740,8 +741,8 @@
 
       .history-item .queue-selector { font-family: var(--sans); }
 
-      .send-bar .btn.full { width: auto; max-width: 100%; padding: var(--spacing-3) var(--spacing-4); }
-      .send-bar .btn:not(.primary) { background: transparent; color: var(--ink); }
+      .send-bar .send { width: 100%; background: var(--color-background-blue); color: var(--color-text-blue); box-shadow: var(--shadow-low); }
+      .send-bar .send:hover:not(:disabled) { filter: brightness(1.04); }
 
       .chip.active { background: var(--color-background-gray); color: var(--color-text-gray); box-shadow: none; }
 

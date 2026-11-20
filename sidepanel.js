@@ -6,6 +6,7 @@ const state = {
   closeInactiveConfirm: false,
   queueShots: {},
   editingQueueId: null,
+  editHeight: 0,
   lightbox: null,
   editComment: "",
   tab: null,
@@ -175,8 +176,11 @@ async function ensureOriginAccess() {
 }
 
 function startQueueEdit(entry) {
+  const node = document.querySelector(`[data-queue-id="${entry.id}"]`);
+  const height = node ? Math.round(node.getBoundingClientRect().height) : 0;
   state.editingQueueId = entry.id;
   state.editComment = typeof entry.comment === "string" ? entry.comment : "";
+  state.editHeight = height;
   state.focusEdit = true;
   render();
 }
@@ -438,7 +442,7 @@ async function clearQueue() {
       return;
     }
     state.sendFailed = null;
-    render();
+    await refreshState();
   } catch (error) {
     toast("error", error?.message || String(error));
   }
@@ -696,7 +700,7 @@ function sendBarNode() {
     label = "Sending…";
   return h("div", { className: "send-bar" }, [
     h("button", {
-      className: `btn full${composing ? "" : " primary"}`,
+      className: "btn full send",
       attrs: { type: "button" },
       disabled: state.pending,
       on: { click: sendQueue }
@@ -830,7 +834,11 @@ function queueNode() {
         state.editingQueueId === entry.id
           ? h("textarea", {
               className: "queue-edit",
-              attrs: { "aria-label": "Edit annotation text", rows: "3" },
+              attrs: {
+                "aria-label": "Edit annotation text",
+                "data-queue-id": entry.id,
+                style: state.editHeight ? `min-height:${state.editHeight}px` : null
+              },
               on: {
                 input: (event) => {
                   state.editComment = event.target.value;
@@ -853,15 +861,13 @@ function queueNode() {
           : h("div", {
               className: `queue-comment${rawComment ? "" : " empty"}`,
               text: rawComment || "No comment",
-              attrs: { role: "button", tabindex: "0", title: "Click to edit", "aria-label": `Edit annotation ${index + 1}` },
+              attrs: { role: "button", tabindex: "0", title: "Click to edit", "aria-label": `Edit annotation ${index + 1}`, "data-queue-id": entry.id },
               on: {
                 click: () => startQueueEdit(entry),
                 keydown: (event) => { if (event.key === "Enter") { event.preventDefault(); startQueueEdit(entry); } }
               }
             }),
-        state.editingQueueId === entry.id
-          ? null
-          : h("div", { className: "queue-selector", text: label, attrs: { title: label } })
+        h("div", { className: "queue-selector", text: label, attrs: { title: label } })
       ]),
       h("div", { className: "queue-item-actions" }, [
         h("button", {
