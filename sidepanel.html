@@ -644,18 +644,12 @@
       .session-row:hover { background: var(--surface);
         box-shadow: var(--shadow-low);
       }
-      .session-row.selected {
-        background: var(--surface); box-shadow: var(--shadow-low);
-      }
-      .session-row.selected:hover { background: var(--peri-tint); }
-      .session-row.unselectable { color: var(--ink-2); }
-      .session-row.unselectable, .session-row.unselectable:hover { background: transparent; box-shadow: none; }
       .session-row.idle .session-item { color: var(--ink-2); }
       .session-row.idle .session-name { font-weight: 400; }
       .session-row.idle .session-icon { opacity: 0.55; filter: grayscale(1); }
       .session-row.idle:hover { background: var(--surface); box-shadow: var(--shadow-low); }
-      .session-row.idle:hover .session-item, .session-row.selected .session-item { color: var(--ink); }
-      .session-row.idle:hover .session-icon, .session-row.selected .session-icon { opacity: 1; filter: none; }
+      .session-row.idle:hover .session-item { color: var(--ink); }
+      .session-row.idle:hover .session-icon { opacity: 1; filter: none; }
       .session-row .session-item { flex: 1 1 auto; min-width: 0; }
       .session-item {
         display: block;
@@ -669,10 +663,6 @@
         padding: var(--spacing-3); font-size: var(--font-size-base); line-height: 1.5; border-radius: var(--r);
       }
       .session-item:disabled { cursor: default; color: var(--ink-2); }
-      .session-select { flex: none; width: 16px; height: 16px; margin: 0 var(--spacing-1) 0 var(--spacing-2);  cursor: pointer;
-        accent-color: var(--peri);
-      }
-      .session-select-spacer { flex: none; width: 16px; margin: 0 var(--spacing-1) 0 var(--spacing-2); }
       .session-name {  overflow-wrap: anywhere;
         font-weight: 500;
       }
@@ -707,16 +697,6 @@
         font: 600 var(--font-size-sm)/1.4 var(--sans);
         background: var(--peri-tint); color: var(--ink);
       }
-      .bulk-bar {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-2);
-        padding: var(--spacing-2) var(--spacing-2) var(--spacing-2) var(--spacing-4);
-        border-radius: var(--r-lg);
-        background: var(--surface);
-        box-shadow: var(--shadow-low);
-      }
-      .bulk-count { font-weight: 600; flex: 1 1 auto; min-width: 0; }
 
       .empty-icon { color: var(--ink-3); margin-bottom: var(--spacing-1); }
       .empty-title { font-weight: 600;  margin-bottom: var(--spacing-2);

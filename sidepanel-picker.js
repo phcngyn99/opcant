@@ -2,7 +2,6 @@
 async function fetchSessions() {
   state.fetchingSessions = true;
   state.fetchingSessionsStarted = true;
-  disarmBulkConfirm();
   render();
   try {
     const response = await sendPanelMessage({ type: "refresh_sessions" });
@@ -10,7 +9,6 @@ async function fetchSessions() {
       state.sessions = Array.isArray(response.sessions) ? response.sessions : [];
       state.sessionsContext = response.context || null;
       state.activeProject = "";
-      pruneSessionSelection();
     } else {
       toast("error", response?.error || "Failed to fetch sessions");
     }
@@ -36,107 +34,6 @@ async function connectSession(session) {
   }
   state.connectingId = null;
   render();
-}
-
-async function postCloseSession(session) {
-  return sendPanelMessage({
-    type: "close_session",
-    sessionId: session.id,
-    baseUrl: session.baseUrl
-  });
-}
-
-let lastVisibleSessionIds = [];
-
-function pruneSessionSelection() {
-  const liveIds = new Set((state.sessions || []).map((item) => item.id));
-  state.selectedSessionIds = new Set(
-    [...state.selectedSessionIds].filter((id) => liveIds.has(id))
-  );
-  if (state.selectionAnchorId && !liveIds.has(state.selectionAnchorId))
-    state.selectionAnchorId = null;
-}
-
-function disarmBulkConfirm() {
-  state.confirmBulkClose = false;
-  if (state.confirmBulkTimer) {
-    clearTimeout(state.confirmBulkTimer);
-    state.confirmBulkTimer = null;
-  }
-}
-
-function armBulkConfirm() {
-  state.confirmBulkClose = true;
-  if (state.confirmBulkTimer)
-    clearTimeout(state.confirmBulkTimer);
-  state.confirmBulkTimer = setTimeout(() => {
-    state.confirmBulkClose = false;
-    state.confirmBulkTimer = null;
-    render();
-  }, 4000);
-  render();
-}
-
-function toggleSessionSelected(session, event) {
-  const clickedId = session.id;
-  const order = lastVisibleSessionIds;
-  if (event?.shiftKey && state.selectionAnchorId && order.includes(state.selectionAnchorId) && order.includes(clickedId)) {
-    const [from, to] = [order.indexOf(state.selectionAnchorId), order.indexOf(clickedId)].sort((a, b) => a - b);
-    for (let i = from; i <= to; i++)
-      state.selectedSessionIds.add(order[i]);
-  } else {
-    if (state.selectedSessionIds.has(clickedId))
-      state.selectedSessionIds.delete(clickedId);
-    else
-      state.selectedSessionIds.add(clickedId);
-    state.selectionAnchorId = clickedId;
-  }
-  disarmBulkConfirm();
-  render();
-}
-
-function toggleSelectMode() {
-  state.selectMode = !state.selectMode;
-  state.selectedSessionIds = new Set();
-  state.selectionAnchorId = null;
-  disarmBulkConfirm();
-  render();
-}
-
-async function closeSelectedSessions() {
-  const ids = [...state.selectedSessionIds];
-  disarmBulkConfirm();
-  const byId = new Map((state.sessions || []).map((item) => [item.id, item]));
-  let closed = 0;
-  let failed = 0;
-  let firstError = "";
-  for (const id of ids) {
-    const session = byId.get(id);
-    if (!session)
-      continue;
-    try {
-      const response = await postCloseSession(session);
-      if (response?.ok) {
-        closed++;
-        state.selectedSessionIds.delete(id);
-      } else {
-        failed++;
-        firstError = firstError || response?.error || "";
-      }
-    } catch (error) {
-      failed++;
-      firstError = firstError || error?.message || "";
-    }
-  }
-  if (closed && !failed)
-    toast("success", closed === 1 ? "Closed 1 session" : `Closed ${closed} sessions`, 2500);
-  else if (closed && failed)
-    toast("error", `Closed ${closed} session${closed === 1 ? "" : "s"}, ${failed} failed`);
-  else if (failed)
-    toast("error", firstError || (failed === 1 ? "Failed to close 1 session" : `Failed to close ${failed} sessions`));
-  if (!failed)
-    state.selectMode = false;
-  fetchSessions();
 }
 
 function sortedSessionGroups(sessionList) {
@@ -167,23 +64,10 @@ function animateListOnce() {
   }, 400);
 }
 
-function sessionSelectNode(item, isSelected) {
-  return h("input", {
-    className: "session-select",
-    checked: isSelected,
-    attrs: { type: "checkbox", "aria-label": `Select session ${item.title || item.id}` },
-    on: {
-      click: (event) => toggleSessionSelected(item, event)
-    }
-  });
-}
-
-function sessionRowClass(item, isSelected) {
+function sessionRowClass(item) {
   let className = "session-row";
   if (item.running === false)
     className += " idle";
-  if (isSelected)
-    className += " selected";
   if (state.animateList)
     className += " anim";
   return className;
@@ -191,23 +75,15 @@ function sessionRowClass(item, isSelected) {
 
 function sessionRowNode(item, index, linkedId) {
   const isLinked = Boolean(linkedId) && item.id === linkedId;
-  const isSelected = state.selectedSessionIds.has(item.id);
-  let onClick = () => connectSession(item);
-  let title = "Connect this tab to this chat";
-  if (state.selectMode) {
-    onClick = (event) => toggleSessionSelected(item, event);
-    title = "Select this chat";
-  }
   return h("div", {
-    className: sessionRowClass(item, isSelected),
+    className: sessionRowClass(item),
     attrs: { style: `--i:${Math.min(index, 12)}` }
   }, [
-    state.selectMode ? sessionSelectNode(item, isSelected) : null,
     h("button", {
       className: "session-item",
-      attrs: { type: "button", title },
+      attrs: { type: "button", title: "Connect this tab to this chat" },
       disabled: Boolean(state.connectingId),
-      on: { click: onClick }
+      on: { click: () => connectSession(item) }
     }, [
       h("div", { className: "row" }, [
         h("span", { className: "session-icon", text: sessionIcon(item.id), attrs: { "aria-hidden": "true" } }),
@@ -220,82 +96,6 @@ function sessionRowNode(item, index, linkedId) {
   ]);
 }
 
-function closeInactiveNode() {
-  const inactive = (state.sessions || []).filter((item) => item.running === false);
-  if (!inactive.length && !(state.sessions || []).length)
-    return null;
-  return h("div", { className: "menu-wrap" }, [
-    h("button", {
-      className: "icon-btn",
-      attrs: { type: "button", "aria-label": "Chat actions", title: "Chat actions" },
-      on: { click: () => { state.chatMenu = !state.chatMenu; render(); } }
-    }, [icon("more")]),
-    state.chatMenu ? h("div", { className: "menu", attrs: { role: "menu" } }, [
-      inactive.length ? h("button", {
-        className: "menu-item",
-        attrs: { type: "button", role: "menuitem" },
-        on: { click: () => { state.chatMenu = false; closeInactiveSessions(inactive); } }
-      }, [icon("trash"), h("span", { text: `Close ${inactive.length} inactive` })]) : null,
-      h("button", {
-        className: "menu-item",
-        attrs: { type: "button", role: "menuitem" },
-        on: { click: () => { state.chatMenu = false; toggleSelectMode(); } }
-      }, [icon("check"), h("span", { text: "Select chats to close" })])
-    ]) : null
-  ]);
-}
-
-async function closeInactiveSessions(inactive) {
-  state.closeInactiveConfirm = false;
-  state.chatMenu = false;
-  for (const session of inactive) {
-    if (!session.baseUrl)
-      continue;
-    try {
-      await postCloseSession(session);
-    } catch {}
-  }
-  await fetchSessions();
-}
-
-function selectToggleNode() {
-  const hasClosable = (state.sessions || []).length > 0;
-  if (!hasClosable && !state.selectMode)
-    return null;
-  return h("button", {
-    className: `btn small${state.selectMode ? " primary" : ""}`,
-    text: state.selectMode ? "Done" : "Select",
-    attrs: { type: "button", "aria-pressed": String(state.selectMode), title: state.selectMode ? "Leave select mode" : "Select chats to close" },
-    on: { click: toggleSelectMode }
-  });
-}
-
-function bulkBarNode() {
-  const count = state.selectedSessionIds.size;
-  const isBulkConfirming = state.confirmBulkClose;
-  let label = `Close ${count}`;
-  if (isBulkConfirming)
-    label = "Confirm?";
-  return h("div", { className: "bulk-bar" }, [
-    h("span", { className: "bulk-count", text: count ? `${count} selected` : "Tick the chats to close" }),
-    h("button", {
-      className: `btn small${isBulkConfirming ? " confirm" : ""}`,
-      text: label,
-      disabled: !count,
-      attrs: { type: "button", "aria-label": `Close ${count} selected chat${count === 1 ? "" : "s"}`, title: isBulkConfirming ? "Click again to close" : "Close selected chats" },
-      on: {
-        click: () => {
-          if (isBulkConfirming) {
-            closeSelectedSessions();
-            return;
-          }
-          armBulkConfirm();
-        }
-      }
-    })
-  ]);
-}
-
 function sessionsNode() {
   const root = h("div", { className: "section" });
   root.appendChild(h("div", { className: "header" }, [
@@ -304,8 +104,6 @@ function sessionsNode() {
     ]),
     h("div", { className: "row" }, [
       themeButtonNode(),
-      closeInactiveNode(),
-      state.selectMode ? selectToggleNode() : null,
       h("button", {
         className: "icon-btn",
         attrs: { type: "button", "aria-label": "Refresh chat list", title: "Refresh chat list" },
@@ -413,9 +211,6 @@ function sessionsNode() {
     }
   }
   const linkedId = state.claim?.sessionId || null;
-  lastVisibleSessionIds = rows.map((item) => item.id);
-  if (state.selectMode)
-    root.appendChild(bulkBarNode());
   const listContainer = h("div", { className: "list" });
   if (searching) {
     root.appendChild(h("div", { className: "results-row" }, [

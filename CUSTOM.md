@@ -12,7 +12,7 @@ simplified UI and Astryx styling. Upstream licence and attribution are kept.
 | `background.js` | `chrome.commands.onCommand`, `fetchClaimActivity()`, toolbar badge + completion notification, `selection_pick` preview capture, `queue_shots`, `update_queue`, `clear_history`, activity in `panel_get_state` |
 | `plugin/v2/index.js` | `/activity` endpoint, `activities` in `/status`, `running` flag in `/sessions` |
 | `sidepanel.js` | activity badge, light/dark toggle, animal avatars, queue editing with autosave, plain verbs, back-icon button, session sorting, boolean-attr-safe `h()` helper |
-| `sidepanel-picker.js` | no agent filter, no `All` chip, running-first sort, project toggle in the footer, `…` menu with single-click close-inactive, no header logo |
+| `sidepanel-picker.js` | no agent filter, no `All` chip, running-first sort, project toggle in the footer, no header logo; the `…` menu (close-inactive bulk + select-to-close) is removed — the session list is live from OpenCode via `refresh_sessions`, so per-row stale state needs no bulk tools |
 | `sidepanel.html` | Astryx tokens, shadow rings, preview and thumbnail styles, menu styles, typographic hierarchy (2xl balanced title, uppercase micro-cap section labels), full-width blue `Send`, hover lift on queue rows |
 
 The badge reads the plugin's `GET /activity?sessionId=...` endpoint, which only
@@ -51,7 +51,6 @@ the same plugin; only this one shows the status badge.
 | Open panel and start selecting | `Alt+Shift+S` |
 | Annotate | Select element → type → Add → Send |
 | Edit a queued item | click its text, type, it autosaves |
-| Close idle chats | picker `…` → `Close N inactive` |
 
 Shortcut bindings can be changed at `chrome://extensions/shortcuts`.
 
@@ -130,7 +129,8 @@ The panel is deliberately terse:
   `Clear queue` drains the queue and refreshes the panel state itself
 - no agent filter tabs, no `All` chip; clicking the active project chip clears it
 - queue rows show the cropped screenshot, edited inline with autosave
-- picker `…` → `Close N inactive` closes in one click, no confirm step
+- picker `…` menu (close-inactive bulk, select-to-close) removed; sessions list
+  is live from OpenCode, per-row rows are connect-only
 
 ## Visual hierarchy
 
@@ -166,8 +166,9 @@ drains.
 
 Each chat gets an animal emoji derived from a hash of its session id: stable per
 chat, different between chats. No network assets, no icon package. Sessions with
-`running: true` sort first; `running` comes from the plugin's activity map, and
-the close-inactive menu stays hidden when the plugin does not report it.
+`running: true` sort first; `running` comes from the plugin's activity map. The
+picker's `…` menu and select-to-close mode were removed: the list refreshes live
+from the plugin's `/sessions`, so bulk housekeeping tools had no job left.
 
 ## Astryx tokens
 
