@@ -321,6 +321,22 @@
         font-weight: 400; line-height: 1.5;
       }
       .queue-comment.empty { color: var(--ink-3); font-style: italic; font-weight: 400; }
+      .queue-comment[role="button"] { cursor: text; border-radius: var(--r-sm); }
+      .queue-comment[role="button"]:hover { background: var(--wash); }
+      .queue-comment[role="button"]:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+      .queue-edit {
+        width: 100%;
+        min-height: 64px;
+        padding: var(--spacing-2);
+        border: 0;
+        border-radius: var(--r-sm);
+        box-shadow: 0 0 0 1px var(--color-accent);
+        background: var(--field);
+        color: var(--ink);
+        font: 500 var(--font-size-base)/1.4 var(--sans);
+        resize: vertical;
+      }
+      .queue-edit-actions { display: flex; gap: var(--spacing-2); margin-top: var(--spacing-2); }
       .queue-selector {
         margin-top: var(--spacing-1);
         overflow: hidden;

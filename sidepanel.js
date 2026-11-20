@@ -5,6 +5,8 @@ const state = {
   chatMenu: false,
   closeInactiveConfirm: false,
   queueShots: {},
+  editingQueueId: null,
+  editComment: "",
   tab: null,
   claim: null,
   activity: null,
@@ -149,6 +151,35 @@ async function ensureOriginAccess() {
   const requested = await chrome.permissions.request({ origins: ["<all_urls>"] });
   if (!requested)
     throw new Error("Site access was denied. The extension needs access to pages to select elements and capture screenshots.");
+}
+
+function startQueueEdit(entry) {
+  state.editingQueueId = entry.id;
+  state.editComment = typeof entry.comment === "string" ? entry.comment : "";
+  state.focusEdit = true;
+  render();
+}
+
+function cancelQueueEdit() {
+  state.editingQueueId = null;
+  state.editComment = "";
+  render();
+}
+
+async function saveQueueEdit() {
+  const id = state.editingQueueId;
+  if (!id)
+    return;
+  try {
+    const response = await sendPanelMessage({ type: "update_queue", id, comment: state.editComment });
+    if (!response?.ok)
+      throw new Error(response?.error || "Could not save");
+    state.editingQueueId = null;
+    state.editComment = "";
+    await refreshState();
+  } catch (error) {
+    toast("error", error instanceof Error ? error.message : "Could not save");
+  }
 }
 
 async function loadQueueShots() {
@@ -766,8 +797,33 @@ function queueNode() {
         attrs: { src: state.queueShots[entry.id], alt: "", loading: "lazy" }
       }) : null,
       h("div", { className: "grow" }, [
-        h("div", { className: `queue-comment${rawComment ? "" : " empty"}`, text: rawComment || "No comment" }),
-        h("div", { className: "queue-selector", text: label, attrs: { title: label } })
+        state.editingQueueId === entry.id
+          ? h("textarea", {
+              className: "queue-edit",
+              attrs: { "aria-label": "Edit annotation text", rows: "3" },
+              on: {
+                input: (event) => { state.editComment = event.target.value; },
+                keydown: (event) => {
+                  if (event.key === "Escape") { event.preventDefault(); cancelQueueEdit(); }
+                  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) { event.preventDefault(); saveQueueEdit(); }
+                }
+              }
+            })
+          : h("div", {
+              className: `queue-comment${rawComment ? "" : " empty"}`,
+              text: rawComment || "No comment",
+              attrs: { role: "button", tabindex: "0", title: "Click to edit", "aria-label": `Edit annotation ${index + 1}` },
+              on: {
+                click: () => startQueueEdit(entry),
+                keydown: (event) => { if (event.key === "Enter") { event.preventDefault(); startQueueEdit(entry); } }
+              }
+            }),
+        state.editingQueueId === entry.id
+          ? h("div", { className: "queue-edit-actions" }, [
+              h("button", { className: "btn small primary", text: "Save", attrs: { type: "button" }, on: { click: saveQueueEdit } }),
+              h("button", { className: "btn small ghost", text: "Cancel", attrs: { type: "button" }, on: { click: cancelQueueEdit } })
+            ])
+          : h("div", { className: "queue-selector", text: label, attrs: { title: label } })
       ]),
       h("div", { className: "queue-item-actions" }, [
         h("button", {
@@ -1102,6 +1158,15 @@ function render() {
     }, 260);
   }
   app.replaceChildren(ui);
+  const queueEdit = ui.querySelector(".queue-edit");
+  if (queueEdit) {
+    queueEdit.value = state.editComment;
+    if (state.focusEdit) {
+      state.focusEdit = false;
+      queueEdit.focus({ preventScroll: true });
+      queueEdit.setSelectionRange(queueEdit.value.length, queueEdit.value.length);
+    }
+  }
   if (focusIndex >= 0 && !state.focusTextarea) {
     const next = ui.querySelectorAll(FOCUSABLE)[focusIndex];
     if (next && next.tagName === activeTag && !next.disabled) {

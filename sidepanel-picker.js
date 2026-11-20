@@ -230,7 +230,7 @@ function sessionRowNode(item, index, linkedId) {
 
 function closeInactiveNode() {
   const inactive = (state.sessions || []).filter((item) => item.running === false);
-  if (!inactive.length)
+  if (!inactive.length && !(state.sessions || []).length)
     return null;
   const confirming = state.closeInactiveConfirm;
   if (confirming) {
@@ -250,11 +250,16 @@ function closeInactiveNode() {
       on: { click: () => { state.chatMenu = !state.chatMenu; render(); } }
     }, [icon("more")]),
     state.chatMenu ? h("div", { className: "menu", attrs: { role: "menu" } }, [
-      h("button", {
+      inactive.length ? h("button", {
         className: "menu-item",
         attrs: { type: "button", role: "menuitem" },
         on: { click: () => { state.chatMenu = false; state.closeInactiveConfirm = true; render(); } }
-      }, [icon("trash"), h("span", { text: `Close ${inactive.length} inactive` })])
+      }, [icon("trash"), h("span", { text: `Close ${inactive.length} inactive` })]) : null,
+      h("button", {
+        className: "menu-item",
+        attrs: { type: "button", role: "menuitem" },
+        on: { click: () => { state.chatMenu = false; toggleSelectMode(); } }
+      }, [icon("check"), h("span", { text: "Select chats to close" })])
     ]) : null
   ]);
 }
@@ -320,7 +325,7 @@ function sessionsNode() {
     h("div", { className: "row" }, [
       themeButtonNode(),
       closeInactiveNode(),
-      selectToggleNode(),
+      state.selectMode ? selectToggleNode() : null,
       h("button", {
         className: "icon-btn",
         attrs: { type: "button", "aria-label": "Refresh chat list", title: "Refresh chat list" },

@@ -64,6 +64,12 @@
 
   const responses = {
     panel_get_state: () => fakeState,
+    update_queue: (message) => {
+      const entry = (fakeState.queue || []).find((q) => q.id === message?.id);
+      if (entry)
+        entry.comment = message?.comment ?? entry.comment;
+      return { ok: true };
+    },
     queue_shots: () => ({
       ok: true,
       shots: Object.fromEntries((fakeState.queue || []).filter((q) => q.hasScreenshot).map((q) => [q.id, "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxODAiIGhlaWdodD0iNDQiPjxyZWN0IHdpZHRoPSIxODAiIGhlaWdodD0iNDQiIHJ4PSIxMCIgZmlsbD0iIzI2MjYyNiIvPjx0ZXh0IHg9IjkwIiB5PSIyOCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sU2Vnb2UgVUksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2ZhZmFmYSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+U3RhcnQgZnJlZSB0cmlhbDwvdGV4dD48L3N2Zz4="]))

@@ -1806,6 +1806,18 @@ function createAnnotationQueueStore() {
       await save();
       return normalized.id;
     },
+    async update(tabId, id, patch) {
+      const list = queues.get(tabId);
+      if (!list)
+        return false;
+      const entry = list.find((item) => item.id === id);
+      if (!entry)
+        return false;
+      if (typeof patch?.comment === "string")
+        entry.comment = patch.comment;
+      await save();
+      return true;
+    },
     async remove(tabId, id) {
       const list = queues.get(tabId);
       if (!list)
@@ -1904,6 +1916,7 @@ var MESSAGE_TYPE = {
   PANEL_VISIBILITY: "panel_visibility",
   CLEAR_HISTORY: "clear_history",
   QUEUE_SHOTS: "queue_shots",
+  UPDATE_QUEUE: "update_queue",
   PANEL_START: "panel_start_annotation",
   PANEL_CANCEL: "panel_cancel_selection",
   PANEL_SUBMIT: "panel_submit_annotation",
@@ -2090,6 +2103,15 @@ async function fetchClaimActivity(claim) {
 }
 
 async function runMessageAction(message, tab, sender) {
+  if (message.type === "update_queue") {
+    if (tab?.id === undefined)
+      throw new Error("No active tab found");
+    if (typeof message.id !== "string" || !message.id)
+      throw new Error("id is required");
+    const comment = typeof message.comment === "string" ? message.comment : "";
+    const updated = await annotationQueues.update(tab.id, message.id, { comment });
+    return { ok: true, updated };
+  }
   if (message.type === "queue_shots") {
     if (tab?.id === undefined)
       throw new Error("No active tab found");
