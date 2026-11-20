@@ -76,3 +76,10 @@ Newest last. Do not edit or delete entries; correct mistakes with a new entry.
   bumping the track count or it wraps.
 - Queue thumbnails use `object-fit: contain` at 52x34: whole element visible,
   no crop, no layout shift.
+
+## 2026-11-20 — lightbox + button scale
+
+- Clicking a queue thumbnail opens a modal lightbox; click or Esc closes it.
+  Image caps at 420px so small crops do not blur into a wall.
+- Text buttons share one height (34px) so rows align: Reselect, Add, Cancel,
+  history Clear. Icon buttons stay 28px by design.

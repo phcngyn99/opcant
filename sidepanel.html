@@ -114,9 +114,10 @@
       .btn.primary:active:not(:disabled) { box-shadow: var(--shadow-low);  }
       .btn.primary:disabled { color: var(--ink-2); box-shadow: none; }
       .btn.small {
-        min-height: 32px; padding: var(--spacing-1) var(--spacing-2);
+        min-height: 34px; padding: var(--spacing-1) var(--spacing-2);
       }
       .btn.full { width: 100%; }
+      .btn { min-height: 34px; }
       .theme-btn { flex: none; }
       .btn.ghost { box-shadow: none; background: transparent; color: var(--ink-2); }
       .btn.ghost:hover:not(:disabled) { background: var(--wash); color: var(--ink); }
@@ -294,6 +295,34 @@
       .queue-item:hover {
         background: var(--surface);
         box-shadow: var(--shadow-low);
+      }
+      .queue-shot-btn {
+        flex: none;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        cursor: zoom-in;
+        border-radius: var(--r-sm);
+      }
+      .queue-shot-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        display: grid;
+        place-items: center;
+        padding: var(--spacing-4);
+        background: light-dark(rgb(0 0 0 / 55%), rgb(0 0 0 / 78%));
+        cursor: zoom-out;
+      }
+      .lightbox-img {
+        width: min(100%, 420px);
+        height: auto;
+        max-height: 100%;
+        object-fit: contain;
+        border-radius: var(--r);
+        box-shadow: 0 0 0 1px var(--line-strong), var(--shadow-high);
+        background: var(--color-background-body);
       }
       .queue-shot {
         flex: none;

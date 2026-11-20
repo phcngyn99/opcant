@@ -6,6 +6,7 @@ const state = {
   closeInactiveConfirm: false,
   queueShots: {},
   editingQueueId: null,
+  lightbox: null,
   editComment: "",
   tab: null,
   claim: null,
@@ -812,10 +813,14 @@ function queueNode() {
     const label = `${entry.tag || ""} ${entry.selector || ""}`.trim() || "element";
     listContainer.appendChild(h("div", { className: "queue-item" }, [
       h("span", { className: "queue-num", text: String(index + 1), attrs: { "aria-hidden": "true" } }),
-      state.queueShots[entry.id] ? h("img", {
+      state.queueShots[entry.id] ? h("button", {
+        className: "queue-shot-btn",
+        attrs: { type: "button", "aria-label": `Enlarge screenshot for annotation ${index + 1}`, title: "Enlarge" },
+        on: { click: () => { state.lightbox = state.queueShots[entry.id]; render(); } }
+      }, [h("img", {
         className: "queue-shot",
         attrs: { src: state.queueShots[entry.id], alt: "", loading: "lazy" }
-      }) : null,
+      })]) : null,
       h("div", { className: "grow" }, [
         state.editingQueueId === entry.id
           ? h("textarea", {
@@ -1140,6 +1145,16 @@ function connectedNode() {
   return root;
 }
 
+function lightboxNode() {
+  return h("div", {
+    className: "lightbox",
+    attrs: { role: "dialog", "aria-modal": "true", "aria-label": "Screenshot preview" },
+    on: { click: () => { state.lightbox = null; render(); } }
+  }, [
+    h("img", { className: "lightbox-img", attrs: { src: state.lightbox, alt: "Annotation screenshot" } })
+  ]);
+}
+
 function buildUI() {
   const root = h("div", { className: "root" });
   if (state.loading) {
@@ -1150,6 +1165,8 @@ function buildUI() {
     root.appendChild(connectedNode());
   else
     root.appendChild(sessionsNode());
+  if (state.lightbox)
+    root.appendChild(lightboxNode());
   if (state.toast)
     root.appendChild(toastNode());
   return root;
@@ -1232,6 +1249,12 @@ window.addEventListener("resize", () => {
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape")
     return;
+  if (state.lightbox) {
+    event.preventDefault();
+    state.lightbox = null;
+    render();
+    return;
+  }
   if (!state.selection)
     return;
   event.preventDefault();
