@@ -35,7 +35,8 @@ Also `?activity=working`, `?activity=failed`, and no query for the picker.
 ## Hard constraints
 
 - No React, no bundler, no build step. MV3 blocks remote scripts and fonts.
-- No new network assets. Icons are inline SVG; avatars are emoji.
+- No new network assets. Icons are inline SVG; avatars are emoji. The manifest
+  declares no `icons`; the extension ships no image mark.
 - Styles use Astryx tokens only: `--color-*`, `--spacing-*`, `--radius-*`,
   `--shadow-*`, `--font-*`. No hex literals in `sidepanel.html`.
 - One palette. Light and dark resolve through `light-dark()`. Do not add a second
@@ -55,7 +56,9 @@ Also `?activity=working`, `?activity=failed`, and no query for the picker.
 - Reload pill appears only when a run finishes.
 - Theme toggle is two-state, remembered in `chrome.storage.local`.
 - Picker sorts running chats first and hides the close-inactive action when the
-  plugin does not report `running`.
+  plugin does not report `running`; that action closes in one click.
+- `Clear queue` and `Copy all` stay enabled when idle; `Clear queue` refreshes
+  panel state after draining.
 - Header stays one line at 340px.
 
 ## Background messages
@@ -101,6 +104,9 @@ Add a type to `MESSAGE_TYPE` in `background.js` or it is silently ignored.
 ## When adding a feature
 
 - Panel state lives in `state`, rendering in `build*Node()` functions.
+- `h()` removes attributes whose value is `false`, `null` or `undefined`, sets
+  `true` to the empty string. Passing `disabled: false` is safe; stringifying it
+  would disable the control.
 - Prefer progressive disclosure: one primary action, the rest behind `…`.
 - Every new control needs an accessible name and a visible focus ring.
 - If it adds a background message, add it to `MESSAGE_TYPE` and to the dev stub

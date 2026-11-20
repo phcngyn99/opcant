@@ -83,3 +83,36 @@ Newest last. Do not edit or delete entries; correct mistakes with a new entry.
   Image caps at 420px so small crops do not blur into a wall.
 - Text buttons share one height (34px) so rows align: Reselect, Add, Cancel,
   history Clear. Icon buttons stay 28px by design.
+
+## 2026-11-20 — boolean-attr bug
+
+- `h()` stringified attributes, so `disabled: false` became
+  `disabled="false"`, which is present and disables the element.
+- `Clear queue` and `Copy all` were both dead controls; the menu opened but
+  clicks did nothing.
+- Root cause found by probe: handler never fired, `disabled: true`,
+  `state.pending: false`.
+- Fix: `h()` removes `false`/`null`/`undefined` attrs, sets `true` to empty
+  string. Verified `clear` handler hits once, queue drains, menu closes.
+
+## 2026-11-20 — bolder + polish pass
+
+- `Send` is a full-width button with the `--color-background-blue` fill, the
+  one primary action in the composer.
+- Header title `--font-size-2xl`, `-0.02em` tracking, `text-wrap: balance`;
+  avatar 18px; section labels uppercase micro-caps at 0.08em tracking.
+- Composer at `--shadow-med`; queue rows lift 1px to `--shadow-med` on hover.
+- Caret uses `--color-accent`; extra space above section headings.
+- Picker logo removed; manifest `icons` and `action.default_icon` removed. The
+  unused `icons/` directory remains on disk but ships nothing.
+
+## 2026-11-20 — close-inactive single click
+
+- `Close N inactive` no longer shows a confirm step. One click closes the
+  inactive chats.
+
+## 2026-11-20 — queue edit layout
+
+- `.queue-edit` matches the row's `line-height: 1.5`, so editing adds no jump.
+- The row's captured height is kept as a min-height while editing, and the
+  selector chip stays visible during the edit.

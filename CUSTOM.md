@@ -8,12 +8,12 @@ simplified UI and Astryx styling. Upstream licence and attribution are kept.
 
 | File | Change |
 |---|---|
-| `manifest.json` | `name` → "OpenCode Annotate (custom)", `version_name` → `1.6.1-custom.1`, `commands` block, `notifications` permission |
+| `manifest.json` | `name` → "OpenCode Annotate (custom)", `version_name` → `1.6.1-custom.1`, `commands` block, `notifications` permission; `icons` and `action.default_icon` removed so no OpenCode mark ships — Chrome shows its default tile |
 | `background.js` | `chrome.commands.onCommand`, `fetchClaimActivity()`, toolbar badge + completion notification, `selection_pick` preview capture, `queue_shots`, `update_queue`, `clear_history`, activity in `panel_get_state` |
 | `plugin/v2/index.js` | `/activity` endpoint, `activities` in `/status`, `running` flag in `/sessions` |
-| `sidepanel.js` | activity badge, light/dark toggle, animal avatars, queue editing with autosave, plain verbs, back-icon button, session sorting |
-| `sidepanel-picker.js` | no agent filter, no `All` chip, running-first sort, project toggle in the footer, `…` menu with close-inactive and select mode |
-| `sidepanel.html` | Astryx tokens, shadow rings, preview and thumbnail styles, menu styles |
+| `sidepanel.js` | activity badge, light/dark toggle, animal avatars, queue editing with autosave, plain verbs, back-icon button, session sorting, boolean-attr-safe `h()` helper |
+| `sidepanel-picker.js` | no agent filter, no `All` chip, running-first sort, project toggle in the footer, `…` menu with single-click close-inactive, no header logo |
+| `sidepanel.html` | Astryx tokens, shadow rings, preview and thumbnail styles, menu styles, typographic hierarchy (2xl balanced title, uppercase micro-cap section labels), full-width blue `Send`, hover lift on queue rows |
 
 The badge reads the plugin's `GET /activity?sessionId=...` endpoint, which only
 exists in the forked plugin at
@@ -122,11 +122,37 @@ which Astryx's theme CSS already scopes (`html[data-theme="light"|"dark"]`).
 The panel is deliberately terse:
 
 - `Add` and `Send`, no `Add & finish`, no `Send 3 to OpenCode`
+- `Send` spans the full composer width with the accent-blue fill, so it reads as
+  the one primary action
 - no helper line under the composer
 - back arrow instead of a `Switch` button
-- `Copy all` / `Clear queue` behind one `…` menu, per-row copy/remove on hover
+- `Copy all` / `Clear queue` behind one `…` menu, per-row copy/remove on hover;
+  `Clear queue` drains the queue and refreshes the panel state itself
 - no agent filter tabs, no `All` chip; clicking the active project chip clears it
 - queue rows show the cropped screenshot, edited inline with autosave
+- picker `…` → `Close N inactive` closes in one click, no confirm step
+
+## Visual hierarchy
+
+- Header title is the focal point: `--font-size-2xl`, `-0.02em` tracking,
+  `text-wrap: balance`; avatar 18px.
+- Section labels (`QUEUE`, `SENT`) are uppercase micro-caps at
+  `--font-size-xs` with `0.08em` tracking.
+- Composer card sits at `--shadow-med`; queue rows lift to `--shadow-med` and
+  translate up 1px on hover.
+- Text caret uses `--color-accent`; sections carry extra air above their heading
+  than below it.
+- The picker header logo was removed and the manifest no longer declares
+  `icons` / `action.default_icon`, so the extension ships no image mark at all.
+
+## The `h()` boolean-attr contract
+
+`h()` in `sidepanel.js` used to stringify attributes, so `disabled: false`
+produced `disabled="false"` — a present attribute, which disables the element.
+That silently killed `Clear queue`, `Copy all` and every other control passing
+a false flag. The helper now removes an attribute whose value is `false`,
+`null` or `undefined`, sets `true` to the empty string, and stringifies
+everything else. Any new control can pass `disabled: someFalsey` safely.
 
 ## Cropped preview and queue thumbnails
 

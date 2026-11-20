@@ -11,7 +11,7 @@ OpenCode / AshleyCode only — Claude Code support is removed.
 
 | Path | What |
 |---|---|
-| `manifest.json`, `background.js`, `sidepanel.*`, `injected/`, `icons/` | Chrome MV3 extension (side panel) |
+| `manifest.json`, `background.js`, `sidepanel.*`, `injected/` | Chrome MV3 extension (side panel) — ships no icon files; manifest declares none |
 | `plugin/` | Forked `opencode-annotate` plugin: local HTTP server + `/activity` endpoint |
 | `CUSTOM.md` | Every change against upstream, with the reasoning |
 | `scripts/verify-send-loss-proof.mjs` | Queue/send regression proofs, 9 cases |
@@ -25,13 +25,15 @@ OpenCode / AshleyCode only — Claude Code support is removed.
 - **Reload pill** — appears when the agent finishes, reloads the tab on click.
 - **Cropped preview** — the selected element's screenshot shows in the composer
   before you send, and again as a thumbnail on every queued item.
-- **Editable queue** — click a queued comment, type, and it saves itself.
-- **Plain actions** — `Add`, `Send`, back arrow. No `Add & finish`, no
-  `Send 3 to OpenCode`, no helper text.
+- **Editable queue** — click a queued comment, type, and it saves itself. Click
+  the thumbnail for a full-size lightbox.
+- **Plain actions** — `Add`, `Send`, back arrow. `Send` spans the composer in
+  the accent-blue fill as the single primary action. No `Add & finish`, no
+  `Send 3 to OpenCode`, no helper text, no logo.
 - **Animal avatar per chat** — deterministic emoji from the session id, so a
   conversation keeps the same animal across reloads.
 - **Running chats first** — the picker sorts active sessions above idle ones and
-  can close the idle ones from the actions menu.
+  closes the idle ones from the actions menu in one click.
 - **Light and dark** — header toggle, remembered in `chrome.storage.local`.
 - **Keyboard shortcuts** — `Alt+Shift+A` opens the panel, `Alt+Shift+S` opens it
   and starts element selection.
@@ -94,7 +96,7 @@ Done = chip `Finished` + `Reload page` button. Tab badge flips `●` to `✓`.
 
 Click a queued comment to edit it: typing saves after 700 ms, blurring saves at
 once, `Esc` discards. Hover a row for copy and remove; the `…` menu holds
-`Copy all` and `Clear queue`.
+`Copy all` and `Clear queue` (drains the queue and refreshes the panel).
 
 First send asks site access. Allow it. Screenshot needs `<all_urls>`; `activeTab` drops on navigation.
 

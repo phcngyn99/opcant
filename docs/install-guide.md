@@ -236,6 +236,10 @@ Extension adds a badge under the chat name and keyboard shortcuts:
 Badge states: `Agent working… · 12s`, `Agent finished · 2m ago`,
 `Agent failed`, `Agent cancelled`, `Queued`.
 
+The fork ships no logo or toolbar icon image: the manifest declares no `icons`,
+and Chrome shows its default tile. Queue rows edit inline, thumbnails open a
+lightbox, and the picker `…` menu closes idle chats in one click.
+
 Load it with `chrome://extensions` → Developer mode → Load unpacked →
 the repo folder. Details and upstream diff notes live in `CUSTOM.md`.
 
