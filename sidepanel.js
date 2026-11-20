@@ -86,6 +86,11 @@ const ICON_PATHS = {
   sun: '<circle cx="6" cy="6" r="2.4"/><path d="M6 .6v1.6M6 9.8v1.6M.6 6h1.6M9.8 6h1.6M2.2 2.2l1.1 1.1M8.7 8.7l1.1 1.1M9.8 2.2L8.7 3.3M3.3 8.7L2.2 9.8"/>',
   moon: '<path d="M9.6 7.4A4.2 4.2 0 0 1 4.6 2.4a4.6 4.6 0 1 0 5 5z"/>',
   auto: '<circle cx="6" cy="6" r="4.6"/><path d="M6 1.4v9.2" /><path d="M6 1.4a4.6 4.6 0 0 1 0 9.2z" fill="currentColor" stroke="none"/>',
+  spinner: '<circle cx="6" cy="6" r="4.4" stroke-dasharray="18 8" stroke-linecap="round"/>',
+  alert: '<path d="M6 1.4L11 10.6H1z"/><path d="M6 4.6v2.6M6 8.6v.1"/>',
+  dash: '<path d="M2.4 6h7.2"/>',
+  clock: '<circle cx="6" cy="6" r="4.6"/><path d="M6 3.4V6l1.8 1.2"/>',
+  dot: '<circle cx="6" cy="6" r="2"/>',
   back: '<path d="M10 6H2M5.2 2.8L2 6l3.2 3.2"/>',
   more: '<circle cx="2.6" cy="6" r=".9"/><circle cx="6" cy="6" r=".9"/><circle cx="9.4" cy="6" r=".9"/>',
   copy: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><path d="M8.5 3.5v-1a1 1 0 0 0-1-1h-5a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h1"/>'
@@ -1003,6 +1008,8 @@ function activityStale(activity) {
   return Number.isFinite(since) && Date.now() - since > 600000;
 }
 
+const ACTIVITY_ICONS = { done: "check", failed: "alert", cancelled: "dash", queued: "clock" };
+
 function activityNode() {
   const activity = state.activity;
   if (activityStale(activity))
@@ -1018,12 +1025,15 @@ function activityNode() {
   };
   if (state.activityFresh)
     attrs["data-fresh"] = "true";
-  const chip = h("span", { className: "activity", attrs }, [
-    h("span", { className: "dot", attrs: { "aria-hidden": "true" } }),
-    h("span", { className: "activity-label", text: label }),
-    time ? h("span", { className: "activity-time", attrs: { "aria-live": "off" }, text: time }) : null
+  const glyph = activity.state === "working"
+    ? h("span", { className: "spinner", attrs: { "aria-hidden": "true" } }, [icon("spinner", 13)])
+    : h("span", { className: "status-glyph", attrs: { "aria-hidden": "true" } }, [icon(ACTIVITY_ICONS[activity.state] || "dot", 13)]);
+  return h("span", { className: "status", attrs }, [
+    glyph,
+    activity.state === "working" && time
+      ? h("span", { className: "status-time", attrs: { "aria-live": "off" }, text: time })
+      : null
   ]);
-  return chip;
 }
 
 async function clearHistory() {
@@ -1087,9 +1097,7 @@ function linkedChatNode() {
     h("div", { className: "grow" }, [
       h("div", { className: "linked-label" }, [
         h("span", { className: "session-icon", text: sessionIcon(claim?.sessionId), attrs: { "aria-hidden": "true" } }),
-        h("span", { text: label, attrs: { title: label } })
-      ]),
-      h("div", { className: "linked-tags" }, [
+        h("span", { className: "linked-title", text: label, attrs: { title: label } }),
         activityNode()
       ])
     ]),
