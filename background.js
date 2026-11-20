@@ -1858,6 +1858,20 @@ function createAnnotationQueueStore() {
       await save();
       return true;
     },
+    async removeHistoryAttempt(tabId, attemptId) {
+      if (tabId === undefined || !sendHistory.has(tabId))
+        return false;
+      const list = sendHistory.get(tabId);
+      const next = list.filter((record) => record.attemptId !== attemptId);
+      if (next.length === list.length)
+        return false;
+      if (next.length)
+        sendHistory.set(tabId, next);
+      else
+        sendHistory.delete(tabId);
+      await save();
+      return true;
+    },
     async recordAttempt(tabId, record) {
       if (tabId === undefined)
         return null;
@@ -2126,7 +2140,10 @@ async function runMessageAction(message, tab, sender) {
   if (message.type === "clear_history") {
     if (tab?.id === undefined)
       throw new Error("No active tab found");
-    const cleared = await annotationQueues.clearHistory(tab.id);
+    const attemptId = typeof message.attemptId === "string" ? message.attemptId : "";
+    const cleared = attemptId
+      ? await annotationQueues.removeHistoryAttempt(tab.id, attemptId)
+      : await annotationQueues.clearHistory(tab.id);
     return { ok: true, cleared };
   }
   if (message.type === "panel_visibility") {

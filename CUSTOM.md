@@ -129,6 +129,10 @@ The panel is deliberately terse:
   `Clear queue` drains the queue and refreshes the panel state itself
 - no agent filter tabs, no `All` chip; clicking the active project chip clears it
 - queue rows show the cropped screenshot, edited inline with autosave
+- Queue and Sent section heads carry a chevron expand/collapse toggle; the
+  choice persists in `chrome.storage.local` under `sectionsOpen`
+- sent rows carry a `×` that clears that one record (`clear_history` with an
+  `attemptId` removes a single attempt; without one it still clears all)
 - picker `…` menu (close-inactive bulk, select-to-close) removed; sessions list
   is live from OpenCode, per-row rows are connect-only
 
