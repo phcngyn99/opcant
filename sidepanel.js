@@ -1089,7 +1089,7 @@ function syncActivityTitle() {
 }
 
 function updateActivityClock() {
-  const time = document.querySelector(".activity-time");
+  const time = document.querySelector(".status-time");
   if (!time)
     return;
   if (activityStale(state.activity)) {

@@ -460,7 +460,7 @@ function emptyStateNode() {
       title: "No annotation server found",
       text: "Nothing is answering on ports 39240–39260. OpenCode starts a server through the opencode-annotate plugin.",
       steps: [
-        "Add \"./plugins/opencode-annotate-custom/v2/index.js\" to \"plugins\" in your config",
+        "Add \"./plugins/opencode-annotate-repo/v2/index.js\" to \"plugins\" in your config",
         "Restart OpenCode",
         "Come back here and press Try again"
       ]

@@ -493,6 +493,7 @@
       .status[data-state="failed"] { color: var(--red-ink); }
       .status[data-state="cancelled"] { color: var(--amber); }
       .status[data-state="working"] { color: var(--peri-ink); }
+      .status-time { font-weight: 500; letter-spacing: 0; white-space: nowrap; }
       .spinner { display: inline-flex; animation: status-spin 900ms linear infinite; }
       @keyframes status-spin { to { transform: rotate(360deg); } }
       @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
