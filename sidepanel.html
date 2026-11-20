@@ -233,7 +233,7 @@
       .element-row { display: flex; align-items: center; gap: var(--spacing-2); }
       .selection-preview {
         display: block;
-        align-self: flex-start;
+        align-self: center;
         width: auto;
         max-width: 100%;
         max-height: 132px;
@@ -255,7 +255,10 @@
         display: flex;
         align-items: flex-start;
         border-radius: var(--r-lg);
-        background: transparent; padding: var(--spacing-3) var(--spacing-2); gap: var(--spacing-2); box-shadow: none;
+        background: var(--color-background-card);
+        padding: var(--spacing-3) var(--spacing-2);
+        gap: var(--spacing-2);
+        box-shadow: 0 0 0 1px var(--line), var(--shadow-low);
       }
       .menu-wrap { position: relative; flex: none; }
       .menu {

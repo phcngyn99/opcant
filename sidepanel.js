@@ -861,12 +861,6 @@ function queueNode() {
       h("div", { className: "queue-item-actions" }, [
         h("button", {
           className: "icon-btn",
-          attrs: { type: "button", "aria-label": `Copy queued annotation ${index + 1} to clipboard`, title: "Copy this annotation" },
-          disabled: state.copying,
-          on: { click: () => copySingle(entry.id) }
-        }, [icon("copy")]),
-        h("button", {
-          className: "icon-btn",
           text: "×",
           attrs: { type: "button", "aria-label": `Remove queued annotation ${index + 1}`, title: "Remove" },
           disabled: state.pending,
