@@ -1351,12 +1351,13 @@ async function submitPanelAnnotation(tabId, message) {
   const viewport = session.viewport;
   const comment = typeof message.comment === "string" ? message.comment.trim() : "";
   await exitSelectionSession(tabId);
+  const tab = await chrome.tabs.get(tabId);
   let dataUrl = session.previewUrl;
+  let cropped = null;
   if (!dataUrl) {
     await new Promise((resolve) => setTimeout(resolve, 60));
-    const tab = await chrome.tabs.get(tabId);
     const screenshot = await captureVisibleTabWithTimeout(tab.windowId);
-    const cropped = await cropScreenshot(tabId, screenshot, element.rect, viewport);
+    cropped = await cropScreenshot(tabId, screenshot, element.rect, viewport);
     dataUrl = cropped || screenshot;
   }
   logExtension("Captured annotation screenshot from side panel", {

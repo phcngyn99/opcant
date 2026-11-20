@@ -700,7 +700,7 @@ function sendBarNode() {
   if (!count)
     return null;
   const composing = state.selection?.phase === "locked";
-  const label = "Send";
+  let label = "Send";
   if (state.pending)
     label = "Sending…";
   return h("div", { className: "send-bar" }, [
