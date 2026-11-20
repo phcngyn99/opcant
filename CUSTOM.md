@@ -103,6 +103,29 @@ Expected:
 {"sessionId":"ses_xxx","activity":{"state":"done","since":"2026-11-20T06:15:38.684Z"},"claimed":true}
 ```
 
+## Astryx tokens
+
+`vendor/astryx/theme.css` is the Astryx neutral theme (`@astryxdesign/theme-neutral@0.4.1`,
+MIT), copied verbatim. The panel declares `data-astryx-theme="neutral"` and maps
+its old palette aliases onto Astryx tokens:
+
+| Alias | Token |
+|---|---|
+| `--paper`, `--surface`, `--field` | `--color-background-body` / `-card` / `-surface` |
+| `--ink`, `--ink-2` | `--color-text-primary` / `-secondary` |
+| `--line`, `--line-strong` | `--color-border` / `-emphasized` |
+| `--peri*` | `--color-accent`, `--color-accent-muted`, `--color-on-accent` |
+| `--green*`, `--red*`, `--amber*` | `--color-success|error|warning` and their `-muted` fills |
+| `--r-sm`, `--r`, `--r-lg` | `--radius-inner` / `-element` / `-container` |
+| `--sans`, `--mono` | `--font-family-body` / `-code` |
+
+Astryx resolves light and dark through CSS `light-dark()`, so the hand-written
+dark palette block is gone. Component CSS from `@astryxdesign/core` is not
+vendored: the panel is vanilla JS with no build step, and React/StyleX cannot be
+loaded into an MV3 extension from a CDN. Only the token layer is used; panel
+component styles follow Astryx conventions — soft elevation (`--shadow-low/-med`),
+hairline rings, the radius scale, and the `--font-size-*` ramp.
+
 ## Black theme
 
 The panel follows `prefers-color-scheme: dark`. Palette inverts to near-black
