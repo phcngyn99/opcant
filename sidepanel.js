@@ -1,6 +1,8 @@
 const state = {
   loading: true,
-  theme: "system",
+  theme: "light",
+  queueMenu: false,
+  queueShots: {},
   tab: null,
   claim: null,
   activity: null,
@@ -79,6 +81,7 @@ const ICON_PATHS = {
   sun: '<circle cx="6" cy="6" r="2.4"/><path d="M6 .6v1.6M6 9.8v1.6M.6 6h1.6M9.8 6h1.6M2.2 2.2l1.1 1.1M8.7 8.7l1.1 1.1M9.8 2.2L8.7 3.3M3.3 8.7L2.2 9.8"/>',
   moon: '<path d="M9.6 7.4A4.2 4.2 0 0 1 4.6 2.4a4.6 4.6 0 1 0 5 5z"/>',
   auto: '<circle cx="6" cy="6" r="4.6"/><path d="M6 1.4v9.2" /><path d="M6 1.4a4.6 4.6 0 0 1 0 9.2z" fill="currentColor" stroke="none"/>',
+  more: '<circle cx="2.6" cy="6" r=".9"/><circle cx="6" cy="6" r=".9"/><circle cx="9.4" cy="6" r=".9"/>',
   copy: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><path d="M8.5 3.5v-1a1 1 0 0 0-1-1h-5a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h1"/>'
 };
 
@@ -146,6 +149,27 @@ async function ensureOriginAccess() {
     throw new Error("Site access was denied. The extension needs access to pages to select elements and capture screenshots.");
 }
 
+async function loadQueueShots() {
+  const wanted = state.queue.filter((entry) => entry?.hasScreenshot && entry.id && !state.queueShots[entry.id]);
+  if (!wanted.length)
+    return;
+  try {
+    const response = await sendPanelMessage({ type: "queue_shots" });
+    if (!response?.ok || !response.shots)
+      return;
+    let changed = false;
+    for (const entry of wanted) {
+      const shot = response.shots[entry.id];
+      if (shot && state.queueShots[entry.id] !== shot) {
+        state.queueShots[entry.id] = shot;
+        changed = true;
+      }
+    }
+    if (changed)
+      render();
+  } catch {}
+}
+
 async function refreshState() {
   try {
     const tab = await currentTab();
@@ -159,14 +183,17 @@ async function refreshState() {
         state.activity = response.activity || null;
         state.queue = Array.isArray(response.queue) ? response.queue : [];
         state.history = Array.isArray(response.history) ? response.history : [];
-        if (!state.queue.length)
+        if (!state.queue.length) {
           state.sendFailed = null;
+          state.queueShots = {};
+        }
         state.selection = response.selection;
         if (!response.selection)
           state.draft = "";
         if (previousPhase !== "locked" && response.selection?.phase === "locked")
           state.focusTextarea = true;
         applyActivityChange(previousActivityState);
+        void loadQueueShots();
       }
     }
   } catch {}
@@ -694,18 +721,25 @@ function queueNode() {
       h("span", { text: "Queue" }),
       h("span", { className: "count", text: String(state.queue.length) })
     ]),
-    h("button", {
-      className: "btn small ghost",
-      attrs: { type: "button", "aria-label": `Copy ${state.queue.length} unsent annotations to clipboard`, title: "Copy unsent annotations to clipboard" },
-      disabled: state.copying || state.pending,
-      on: { click: copyUnsent }
-    }, [icon("copy"), h("span", { text: "Copy all" })]),
-    h("button", {
-      className: "btn small ghost",
-      attrs: { type: "button", "aria-label": "Clear the queue", title: "Clear the queue" },
-      disabled: state.pending,
-      on: { click: clearQueue }
-    }, [icon("trash"), h("span", { text: "Clear" })])
+    h("div", { className: "menu-wrap" }, [
+      h("button", {
+        className: "icon-btn",
+        attrs: { type: "button", "aria-label": "Queue actions", "aria-expanded": String(state.queueMenu), title: "Queue actions" },
+        on: { click: () => { state.queueMenu = !state.queueMenu; render(); } }
+      }, [icon("more")]),
+      state.queueMenu ? h("div", { className: "menu", attrs: { role: "menu" } }, [
+        h("button", {
+          className: "menu-item",
+          attrs: { type: "button", role: "menuitem", disabled: state.copying || state.pending },
+          on: { click: () => { state.queueMenu = false; copyUnsent(); } }
+        }, [icon("copy"), h("span", { text: "Copy all" })]),
+        h("button", {
+          className: "menu-item",
+          attrs: { type: "button", role: "menuitem", disabled: state.pending },
+          on: { click: () => { state.queueMenu = false; clearQueue(); } }
+        }, [icon("trash"), h("span", { text: "Clear queue" })])
+      ]) : null
+    ])
   ]));
   if (state.sendFailed) {
     const delivered = state.sendFailed.sent || 0;
@@ -732,6 +766,10 @@ function queueNode() {
     const label = `${entry.tag || ""} ${entry.selector || ""}`.trim() || "element";
     listContainer.appendChild(h("div", { className: "queue-item" }, [
       h("span", { className: "queue-num", text: String(index + 1), attrs: { "aria-hidden": "true" } }),
+      state.queueShots[entry.id] ? h("img", {
+        className: "queue-shot",
+        attrs: { src: state.queueShots[entry.id], alt: "", loading: "lazy" }
+      }) : null,
       h("div", { className: "grow" }, [
         h("div", { className: `queue-comment${rawComment ? "" : " empty"}`, text: rawComment || "No comment" }),
         h("div", { className: "queue-selector", text: label, attrs: { title: label } })
@@ -991,7 +1029,6 @@ function linkedChatNode() {
     h("div", { className: "grow" }, [
       h("div", { className: "linked-label", text: label, attrs: { title: label } }),
       h("div", { className: "linked-meta" }, [
-        h("span", { text: agentLabel(claim?.agent) }),
         project
       ]),
       activityNode()
@@ -1116,24 +1153,28 @@ document.addEventListener("keydown", (event) => {
   cancelSelection();
 });
 
-const THEME_ORDER = ["system", "light", "dark"];
-const THEME_LABEL = { system: "Auto", light: "Light", dark: "Dark" };
+const THEME_ORDER = ["light", "dark"];
+const THEME_LABEL = { light: "Light", dark: "Dark" };
 
 function applyTheme(theme) {
-  state.theme = THEME_ORDER.includes(theme) ? theme : "system";
-  const root = document.documentElement;
-  if (state.theme === "system")
-    delete root.dataset.theme;
-  else
-    root.dataset.theme = state.theme;
+  state.theme = THEME_ORDER.includes(theme) ? theme : systemTheme();
+  document.documentElement.dataset.theme = state.theme;
+}
+
+function systemTheme() {
+  try {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  } catch {
+    return "light";
+  }
 }
 
 async function readTheme() {
   try {
     const stored = await chrome.storage?.local?.get?.("theme");
-    return stored?.theme || "system";
+    return stored?.theme || systemTheme();
   } catch {
-    return "system";
+    return systemTheme();
   }
 }
 

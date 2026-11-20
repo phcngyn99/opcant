@@ -1903,6 +1903,7 @@ var MESSAGE_TYPE = {
   PANEL_GET_STATE: "panel_get_state",
   PANEL_VISIBILITY: "panel_visibility",
   CLEAR_HISTORY: "clear_history",
+  QUEUE_SHOTS: "queue_shots",
   PANEL_START: "panel_start_annotation",
   PANEL_CANCEL: "panel_cancel_selection",
   PANEL_SUBMIT: "panel_submit_annotation",
@@ -2089,6 +2090,16 @@ async function fetchClaimActivity(claim) {
 }
 
 async function runMessageAction(message, tab, sender) {
+  if (message.type === "queue_shots") {
+    if (tab?.id === undefined)
+      throw new Error("No active tab found");
+    const shots = {};
+    for (const entry of annotationQueues.list(tab.id)) {
+      if (entry?.screenshot?.dataUrl && entry.id)
+        shots[entry.id] = entry.screenshot.dataUrl;
+    }
+    return { ok: true, shots };
+  }
   if (message.type === "clear_history") {
     if (tab?.id === undefined)
       throw new Error("No active tab found");

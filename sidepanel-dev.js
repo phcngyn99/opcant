@@ -64,6 +64,10 @@
 
   const responses = {
     panel_get_state: () => fakeState,
+    queue_shots: () => ({
+      ok: true,
+      shots: Object.fromEntries((fakeState.queue || []).filter((q) => q.hasScreenshot).map((q) => [q.id, "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxODAiIGhlaWdodD0iNDQiPjxyZWN0IHdpZHRoPSIxODAiIGhlaWdodD0iNDQiIHJ4PSIxMCIgZmlsbD0iIzI2MjYyNiIvPjx0ZXh0IHg9IjkwIiB5PSIyOCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sU2Vnb2UgVUksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2ZhZmFmYSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+U3RhcnQgZnJlZSB0cmlhbDwvdGV4dD48L3N2Zz4="]))
+    }),
     refresh_sessions: () => fakeSessions,
     connect_tab_to_session: (message) => {
       const session = fakeSessions.sessions.find((s) => s.id === message?.session?.id);
@@ -78,18 +82,21 @@
         fakeState.queue = [
           {
             id: "dev-queue-1",
+            hasScreenshot: true,
             comment: "The pricing card jumps when the billing toggle switches. Keep the height fixed so the CTA doesn't move.",
             tag: "section",
             selector: "#pricing .pricing-grid"
           },
           {
             id: "dev-queue-2",
+            hasScreenshot: true,
             comment: "This CTA reads 'Start free trial' but goes to a signup form asking for a card. Either rename it or link it to the email-only signup.",
             tag: "button",
             selector: "#pricing .cta-primary"
           },
           {
             id: "dev-queue-3",
+            hasScreenshot: true,
             comment: "Contrast on the footnote text is too low against the gray background - hard to read on an outdoor screen.",
             tag: "p",
             selector: "#pricing .footnote"

@@ -256,9 +256,55 @@
         border-radius: var(--r-lg);
         background: transparent; padding: var(--spacing-3) var(--spacing-2); gap: var(--spacing-2); box-shadow: none;
       }
+      .menu-wrap { position: relative; flex: none; }
+      .menu {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 4px);
+        z-index: 20;
+        min-width: 148px;
+        padding: var(--spacing-1);
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        border-radius: var(--r);
+        background: var(--color-background-surface);
+        box-shadow: 0 0 0 1px var(--line), var(--shadow-med);
+      }
+      .menu-item {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-2);
+        width: 100%;
+        padding: var(--spacing-2) var(--spacing-3);
+        border: 0;
+        border-radius: var(--r-sm);
+        background: transparent;
+        color: var(--ink);
+        font: 500 var(--font-size-sm)/1.2 var(--sans);
+        text-align: left;
+        cursor: pointer;
+      }
+      .menu-item:hover:not(:disabled) { background: var(--wash); }
+      .menu-item:disabled { color: var(--ink-3); cursor: default; }
+      .menu-item .ic { color: var(--ink-2); }
+      .queue-item .queue-item-actions { opacity: 0; transition: opacity 120ms ease; }
+      .queue-item:hover .queue-item-actions,
+      .queue-item:focus-within .queue-item-actions { opacity: 1; }
       .queue-item:hover {
         background: var(--surface);
         box-shadow: var(--shadow-low);
+      }
+      .queue-shot {
+        flex: none;
+        width: 44px;
+        height: 32px;
+        margin-top: 1px;
+        object-fit: cover;
+        object-position: left top;
+        border-radius: var(--r-sm);
+        box-shadow: 0 0 0 1px var(--line);
+        background: var(--color-background-body);
       }
       .queue-num {
         flex: none;
