@@ -68,9 +68,6 @@ function h(tag, props = {}, children = []) {
   return node;
 }
 
-const BRAND_ICONS = {
-  opencode: { viewBox: "194 194 636 706", path: "m316.5 874.49c-9.43 7.73-16.5 12.57-16.5 11.29.01-1.49 12.34-75.52 14.52-87.14.82-4.32 1.48-8.04 1.48-8.25s-6.86-.41-15.25-.42c-24.64-.06-37.92-3.58-54.07-14.32-16.6-11.05-28.23-27.03-34.32-47.15-1.72-5.7-1.83-16.8-2.14-222-.25-160.11-.03-217.94.82-223.5 3.51-22.69 15.91-42.88 35.06-57.07 7.73-5.74 16.11-9.73 27.4-13.07l8-2.36h231c220.59 0 231.29.08 237.5 1.83 8.34 2.34 17.06 6.16 23.94 10.47 18.01 11.31 30.94 28.97 37.33 51.01l2.23 7.69v439l-2.24 8.41c-6.05 22.68-21.47 41.27-43.47 52.4-2.89 1.46-4.85 2.66-6.92 3.65-10.51 5.03-23.65 4.55-174.91 5.03l-160.55.51-6.45 5.08c-3.55 2.8-9.38 7.33-12.96 10.06-3.58 2.74-17.3 13.3-30.5 23.47s-30.75 23.61-39 29.88-17.25 13.24-20 15.5zm58.5-541.49v358h274v-358zm213 61v236h-152v-236z" }
-};
 
 const ICON_PATHS = {
   refresh: '<path d="M10 6a4 4 0 1 1-1.17-2.83M10 1.5V3.5H8"/>',
@@ -97,20 +94,6 @@ function icon(name, size = 14) {
 }
 
 
-function brandIcon(name, size = 13) {
-  const brand = BRAND_ICONS[name];
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("viewBox", brand.viewBox);
-  svg.setAttribute("width", String(size));
-  svg.setAttribute("height", String(size));
-  svg.setAttribute("aria-hidden", "true");
-  svg.setAttribute("class", "brand-ic");
-  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  path.setAttribute("d", brand.path);
-  path.setAttribute("fill", "currentColor");
-  svg.appendChild(path);
-  return svg;
-}
 
 const AGENTS = {
   opencode: { label: "OpenCode", icon: "opencode", closable: true }
@@ -124,12 +107,6 @@ function agentLabel(agent) {
   return agentOf(agent).label;
 }
 
-function agentGlyph(agent, size = 14) {
-  return h("span", {
-    className: "agent-glyph",
-    attrs: { "aria-hidden": "true" }
-  }, [brandIcon(agentOf(agent).icon, size)]);
-}
 
 function addedTickNode() {
   return h("span", { className: "added-tick" }, [
@@ -858,7 +835,13 @@ function historyNode() {
     h("div", { className: "title grow" }, [
       h("span", { text: "Sent" }),
       h("span", { className: "count quiet", text: String(state.history.length) })
-    ])
+    ]),
+    h("button", {
+      className: "btn small ghost",
+      text: "Clear",
+      attrs: { type: "button", title: "Clear sent history for this tab", "aria-label": "Clear sent history" },
+      on: { click: clearHistory }
+    })
   ]));
   const listContainer = h("div", { className: "list cards" });
   for (const attempt of state.history)
@@ -932,6 +915,18 @@ function activityNode() {
   ]);
 }
 
+async function clearHistory() {
+  try {
+    const response = await sendPanelMessage({ type: "clear_history" });
+    if (!response?.ok)
+      throw new Error(response?.error || "Could not clear history");
+    toast("success", "History cleared");
+    await refreshState();
+  } catch (error) {
+    toast("error", error instanceof Error ? error.message : "Could not clear history");
+  }
+}
+
 async function reloadPage() {
   const tabId = state.tab?.id;
   if (!tabId) {
@@ -988,7 +983,6 @@ function linkedChatNode() {
     ]);
   }
   return h("div", { className: "linked" }, [
-    agentGlyph(claim?.agent, 14),
     h("div", { className: "grow" }, [
       h("div", { className: "linked-label", text: label, attrs: { title: label } }),
       h("div", { className: "linked-meta" }, [

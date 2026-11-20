@@ -335,7 +335,7 @@
       .history-error { margin-top: var(--spacing-1); color: var(--red-ink); font-size: var(--font-size-sm); word-break: break-word; line-height: 1.45; }
 
       .linked {
-        display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: start; gap: var(--spacing-2);
+        display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: start; gap: var(--spacing-2);
       }
       .header .title {
         min-width: 0;
@@ -424,9 +424,6 @@
       }
       .search::placeholder { color: var(--ink-3); }
       .search:focus { outline: none; box-shadow: none; }
-      .agent-glyph { color: var(--ink-2); display: inline-flex; flex: none; }
-      .agent-glyph .brand-ic { color: inherit; }
-      .brand-ic { flex: none; fill: currentColor; stroke: none; }
       .chips-wrap {
         display: flex;
         align-items: center;
@@ -585,7 +582,6 @@
       }
 
 
-      .linked > .agent-glyph { margin-top: var(--spacing-1); }
 
       .activity-reload.btn.small { padding: var(--spacing-1) var(--spacing-2); min-height: 28px; font-size: var(--font-size-sm); text-transform: none; letter-spacing: normal; }
 

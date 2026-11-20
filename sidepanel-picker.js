@@ -214,7 +214,6 @@ function sessionRowNode(item, index, linkedId) {
         h("span", { className: "session-date", text: formatRelative(item.updatedAt) })
       ]),
       h("div", { className: "session-meta" }, [
-        agentGlyph(item.agent),
         h("span", {
           className: "project-dot",
           attrs: { style: `--dot:${projectHue(item.directory)}`, "aria-hidden": "true" }

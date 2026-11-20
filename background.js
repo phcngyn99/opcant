@@ -1835,6 +1835,13 @@ function createAnnotationQueueStore() {
       const list = sendHistory.get(tabId);
       return list ? list.slice() : [];
     },
+    async clearHistory(tabId) {
+      if (tabId === undefined || !sendHistory.has(tabId))
+        return false;
+      sendHistory.delete(tabId);
+      await save();
+      return true;
+    },
     async recordAttempt(tabId, record) {
       if (tabId === undefined)
         return null;
@@ -1892,6 +1899,7 @@ var MESSAGE_TYPE = {
   CLOSE_SESSION: "close_session",
   PANEL_GET_STATE: "panel_get_state",
   PANEL_VISIBILITY: "panel_visibility",
+  CLEAR_HISTORY: "clear_history",
   PANEL_START: "panel_start_annotation",
   PANEL_CANCEL: "panel_cancel_selection",
   PANEL_SUBMIT: "panel_submit_annotation",
@@ -2078,6 +2086,12 @@ async function fetchClaimActivity(claim) {
 }
 
 async function runMessageAction(message, tab, sender) {
+  if (message.type === "clear_history") {
+    if (tab?.id === undefined)
+      throw new Error("No active tab found");
+    const cleared = await annotationQueues.clearHistory(tab.id);
+    return { ok: true, cleared };
+  }
   if (message.type === "panel_visibility") {
     if (tab?.id !== undefined)
       panelVisibility.set(tab.id, message.visible === true);
