@@ -1083,26 +1083,15 @@ function updateActivityClock() {
 function linkedChatNode() {
   const claim = state.claim;
   const label = claim?.sessionLabel || claim?.sessionId || "Connected";
-  let project = null;
-  if (claim?.projectDirectory) {
-    project = h("span", { className: "linked-project" }, [
-      h("span", {
-        className: "project-dot",
-        attrs: { style: `--dot:${projectHue(claim.projectDirectory)}`, "aria-hidden": "true" }
-      }),
-      h("span", { className: "project-name", text: projectNameFor(claim.projectDirectory), attrs: { title: claim.projectDirectory } })
-    ]);
-  }
   return h("div", { className: "linked" }, [
     h("div", { className: "grow" }, [
       h("div", { className: "linked-label" }, [
         h("span", { className: "session-icon", text: sessionIcon(claim?.sessionId), attrs: { "aria-hidden": "true" } }),
         h("span", { text: label, attrs: { title: label } })
       ]),
-      h("div", { className: "linked-meta" }, [
-        project
-      ]),
-      activityNode()
+      h("div", { className: "linked-tags" }, [
+        activityNode()
+      ])
     ]),
     state.activity?.state === "done" ? h("button", {
       className: "icon-btn",

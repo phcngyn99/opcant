@@ -213,17 +213,6 @@ function sessionRowNode(item, index, linkedId) {
         isLinked ? h("span", { className: "linked-chip", text: "Linked" }) : null,
         state.connectingId === item.id ? h("span", { className: "session-date", text: "Connecting…" }) : null,
         h("span", { className: "session-date", text: formatRelative(item.updatedAt) })
-      ]),
-      h("div", { className: "session-meta" }, [
-        h("span", {
-          className: "project-dot",
-          attrs: { style: `--dot:${projectHue(item.directory)}`, "aria-hidden": "true" }
-        }),
-        h("span", {
-          className: "project-name",
-          text: projectNameFor(item.directory) || item.id,
-          attrs: { title: item.directory || item.id }
-        })
       ])
     ])
   ]);
@@ -369,7 +358,7 @@ function sessionsNode() {
   ]);
   root.appendChild(searchRow);
   let projectsToggle = null;
-  if (groups.length > 1) {
+  if (false) {
     const showAllChips = state.showAllProjects || searching;
     const chipDefs = groups.map((group) => ({
       label: `${projectNameFor(group.directory)} (${group.items.length})`,
