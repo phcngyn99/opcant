@@ -195,5 +195,13 @@
     request: async () => true
   };
 
-  window.chrome = { runtime, windows, tabs, permissions };
+  const storageLocal = {
+    get: async (key) => ({ [key]: window.localStorage.getItem(`dev-${key}`) ?? undefined }),
+    set: async (obj) => {
+      for (const [key, value] of Object.entries(obj))
+        window.localStorage.setItem(`dev-${key}`, String(value));
+    }
+  };
+
+  window.chrome = { runtime, windows, tabs, permissions, storage: { local: storageLocal } };
 })();
