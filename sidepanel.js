@@ -184,6 +184,12 @@ async function saveQueueEdit() {
   const id = state.editingQueueId;
   if (!id)
     return;
+  const unchanged = state.editComment === (state.queue.find((item) => item.id === id)?.comment || "");
+  if (unchanged) {
+    state.editingQueueId = null;
+    render();
+    return;
+  }
   try {
     const response = await sendPanelMessage({ type: "update_queue", id, comment: state.editComment });
     if (!response?.ok)
@@ -816,7 +822,18 @@ function queueNode() {
               className: "queue-edit",
               attrs: { "aria-label": "Edit annotation text", rows: "3" },
               on: {
-                input: (event) => { state.editComment = event.target.value; },
+                input: (event) => {
+                  state.editComment = event.target.value;
+                  if (state.editTimer)
+                    clearTimeout(state.editTimer);
+                  state.editTimer = setTimeout(() => { state.editTimer = null; saveQueueEdit(); }, 700);
+                },
+                blur: () => {
+                  if (state.editTimer)
+                    clearTimeout(state.editTimer);
+                  state.editTimer = null;
+                  saveQueueEdit();
+                },
                 keydown: (event) => {
                   if (event.key === "Escape") { event.preventDefault(); cancelQueueEdit(); }
                   if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) { event.preventDefault(); saveQueueEdit(); }
@@ -833,10 +850,7 @@ function queueNode() {
               }
             }),
         state.editingQueueId === entry.id
-          ? h("div", { className: "queue-edit-actions" }, [
-              h("button", { className: "btn small primary", text: "Save", attrs: { type: "button" }, on: { click: saveQueueEdit } }),
-              h("button", { className: "btn small ghost", text: "Cancel", attrs: { type: "button" }, on: { click: cancelQueueEdit } })
-            ])
+          ? null
           : h("div", { className: "queue-selector", text: label, attrs: { title: label } })
       ]),
       h("div", { className: "queue-item-actions" }, [
