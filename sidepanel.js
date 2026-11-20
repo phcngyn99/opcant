@@ -2,6 +2,8 @@ const state = {
   loading: true,
   theme: "light",
   queueMenu: false,
+  chatMenu: false,
+  closeInactiveConfirm: false,
   queueShots: {},
   tab: null,
   claim: null,

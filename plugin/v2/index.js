@@ -287,7 +287,10 @@ export default {
         if (req.method === "GET" && url.pathname === "/status") return sendJson(res, 200, status(), origin)
         if (req.method === "GET" && url.pathname === "/sessions") {
           if (activeSessionID) await refreshSession(activeSessionID)
-          return sendJson(res, 200, { sessions: [...sessions.values()].sort((a, b) => b.updatedAt - a.updatedAt) }, origin)
+          const list = [...sessions.values()]
+            .sort((a, b) => b.updatedAt - a.updatedAt)
+            .map((item) => ({ ...item, running: activities.get(item.id)?.state === "working" }))
+          return sendJson(res, 200, { sessions: list }, origin)
         }
         if (req.method === "GET" && url.pathname === "/activity") {
           const sessionID = url.searchParams.get("sessionId")

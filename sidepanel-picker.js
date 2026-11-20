@@ -228,6 +228,50 @@ function sessionRowNode(item, index, linkedId) {
   ]);
 }
 
+function closeInactiveNode() {
+  const inactive = (state.sessions || []).filter((item) => item.running === false);
+  if (!inactive.length)
+    return null;
+  const confirming = state.closeInactiveConfirm;
+  if (confirming) {
+    return h("div", { className: "menu-wrap" }, [
+      h("button", {
+        className: "btn small confirm",
+        text: `Close ${inactive.length}`,
+        attrs: { type: "button", title: "Click again to close these chats" },
+        on: { click: () => closeInactiveSessions(inactive) }
+      })
+    ]);
+  }
+  return h("div", { className: "menu-wrap" }, [
+    h("button", {
+      className: "icon-btn",
+      attrs: { type: "button", "aria-label": "Chat actions", title: "Chat actions" },
+      on: { click: () => { state.chatMenu = !state.chatMenu; render(); } }
+    }, [icon("more")]),
+    state.chatMenu ? h("div", { className: "menu", attrs: { role: "menu" } }, [
+      h("button", {
+        className: "menu-item",
+        attrs: { type: "button", role: "menuitem" },
+        on: { click: () => { state.chatMenu = false; state.closeInactiveConfirm = true; render(); } }
+      }, [icon("trash"), h("span", { text: `Close ${inactive.length} inactive` })])
+    ]) : null
+  ]);
+}
+
+async function closeInactiveSessions(inactive) {
+  state.closeInactiveConfirm = false;
+  state.chatMenu = false;
+  for (const session of inactive) {
+    if (!session.baseUrl)
+      continue;
+    try {
+      await postCloseSession(session);
+    } catch {}
+  }
+  await fetchSessions();
+}
+
 function selectToggleNode() {
   const hasClosable = (state.sessions || []).length > 0;
   if (!hasClosable && !state.selectMode)
@@ -275,6 +319,7 @@ function sessionsNode() {
     ]),
     h("div", { className: "row" }, [
       themeButtonNode(),
+      closeInactiveNode(),
       selectToggleNode(),
       h("button", {
         className: "icon-btn",

@@ -68,7 +68,11 @@
       ok: true,
       shots: Object.fromEntries((fakeState.queue || []).filter((q) => q.hasScreenshot).map((q) => [q.id, "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxODAiIGhlaWdodD0iNDQiPjxyZWN0IHdpZHRoPSIxODAiIGhlaWdodD0iNDQiIHJ4PSIxMCIgZmlsbD0iIzI2MjYyNiIvPjx0ZXh0IHg9IjkwIiB5PSIyOCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sU2Vnb2UgVUksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2ZhZmFmYSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+U3RhcnQgZnJlZSB0cmlhbDwvdGV4dD48L3N2Zz4="]))
     }),
-    refresh_sessions: () => fakeSessions,
+    refresh_sessions: () => ({
+      ok: true,
+      ...fakeSessions,
+      sessions: fakeSessions.sessions.map((item) => ({ ...item, running: item.id === "s9" || item.id === "s12" }))
+    }),
     connect_tab_to_session: (message) => {
       const session = fakeSessions.sessions.find((s) => s.id === message?.session?.id);
       if (session) {
