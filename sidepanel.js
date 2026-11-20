@@ -102,6 +102,20 @@ function icon(name, size = 14) {
 
 
 
+const ANIMALS = [
+  "🦊","🐼","🦉","🐙","🦁","🐨","🐸","🦄","🐝","🦕",
+  "🐳","🦔","🐧","🦩","🐢","🦋","🐺","🦖","🐬","🦥",
+  "🐘","🦒","🐇","🐿️","🦌","🐑","🐎","🦜","🐠","🦀"
+];
+
+function sessionIcon(id) {
+  const text = typeof id === "string" ? id : "";
+  let hash = 0;
+  for (let i = 0; i < text.length; i++)
+    hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+  return ANIMALS[hash % ANIMALS.length];
+}
+
 const AGENTS = {
   opencode: { label: "OpenCode", icon: "opencode", closable: true }
 };
@@ -1078,7 +1092,10 @@ function linkedChatNode() {
   }
   return h("div", { className: "linked" }, [
     h("div", { className: "grow" }, [
-      h("div", { className: "linked-label", text: label, attrs: { title: label } }),
+      h("div", { className: "linked-label" }, [
+        h("span", { className: "session-icon", text: sessionIcon(claim?.sessionId), attrs: { "aria-hidden": "true" } }),
+        h("span", { text: label, attrs: { title: label } })
+      ]),
       h("div", { className: "linked-meta" }, [
         project
       ]),

@@ -208,6 +208,7 @@ function sessionRowNode(item, index, linkedId) {
       on: { click: onClick }
     }, [
       h("div", { className: "row" }, [
+        h("span", { className: "session-icon", text: sessionIcon(item.id), attrs: { "aria-hidden": "true" } }),
         h("div", { className: "session-name grow", text: item.title || item.id }),
         isLinked ? h("span", { className: "linked-chip", text: "Linked" }) : null,
         state.connectingId === item.id ? h("span", { className: "session-date", text: "Connecting…" }) : null,
