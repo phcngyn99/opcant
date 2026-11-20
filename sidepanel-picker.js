@@ -292,10 +292,7 @@ function sessionsNode() {
     root.appendChild(emptyStateNode());
     return root;
   }
-  const rawSessions = state.sessions || [];
-  const sessions = state.agentFilter
-    ? rawSessions.filter((item) => (item.agent || "opencode") === state.agentFilter)
-    : rawSessions;
+  const sessions = state.sessions || [];
   const groups = sortedSessionGroups(sessions);
   const query = state.searchQuery.trim().toLowerCase();
   const searching = query.length > 0;
@@ -318,34 +315,9 @@ function sessionsNode() {
         render();
       });
       return searchInput;
-    })(),
-    h("div", {
-      className: "agent-tabs",
-      attrs: { role: "group", "aria-label": "Filter chats by agent" }
-    }, [
-      { value: "", label: "All chats" },
-      { value: "opencode", label: "OpenCode chats" }
-    ].map((tab) => h("button", {
-      className: `agent-tab${state.agentFilter === tab.value ? " active" : ""}`,
-      attrs: { type: "button", "aria-pressed": String(state.agentFilter === tab.value), "aria-label": tab.label, title: tab.label },
-      on: {
-        click: () => {
-          state.agentFilter = tab.value;
-          state.chipFit = null;
-          animateListOnce();
-        }
-      }
-    }, [agentTabContent(tab.value)])))
+    })()
   ]);
   root.appendChild(searchRow);
-  if (state.agentFilter && !sessions.length) {
-    root.appendChild(h("div", {
-      className: "hint",
-      attrs: { role: "status" },
-      text: `No ${agentLabel(state.agentFilter)} chats are running right now.`
-    }));
-    return root;
-  }
   if (groups.length > 1) {
     const showAllChips = state.showAllProjects || searching;
     const chipDefs = [{ label: `All (${sessions.length})`, value: "" }].concat(groups.map((group) => ({
@@ -438,12 +410,6 @@ function sessionsNode() {
   rows.forEach((item, index) => listContainer.appendChild(sessionRowNode(item, index, linkedId)));
   root.appendChild(listContainer);
   return root;
-}
-
-function agentTabContent(value) {
-  if (!value)
-    return h("span", { text: "All" });
-  return brandIcon(agentOf(value).icon, 14);
 }
 
 function emptyStateNode() {

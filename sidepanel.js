@@ -17,7 +17,6 @@ const state = {
   fetchingSessionsStarted: false,
   activeProject: "",
   searchQuery: "",
-  agentFilter: "",
   showAllProjects: false,
   chipFit: null,
   animateChips: false,

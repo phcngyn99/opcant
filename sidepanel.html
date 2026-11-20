@@ -424,31 +424,8 @@
       }
       .search::placeholder { color: var(--ink-3); }
       .search:focus { outline: none; box-shadow: none; }
-      .agent-tabs {
-        display: inline-flex;
-        flex: none;
-        box-shadow: none;
-        border-radius: var(--r-lg);
-        background: var(--surface); padding: var(--spacing-1);
-      }
-      .agent-tab {
-        min-width: 32px;
-        height: 32px;
-        border-radius: var(--r);
-        font: 600 var(--font-size-sm)/1 var(--sans);
-        border: 0;
-        background: transparent;
-        color: var(--ink-2);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        padding: 0 var(--spacing-3);
-      }
-      .agent-tab:hover { background: var(--wash); color: var(--ink); }
-      .agent-tab.active { background: var(--ink); color: var(--on-ink); }
       .agent-glyph { color: var(--ink-2); display: inline-flex; flex: none; }
-      .agent-glyph .brand-ic, .agent-tab .brand-ic { color: inherit; }
+      .agent-glyph .brand-ic { color: inherit; }
       .brand-ic { flex: none; fill: currentColor; stroke: none; }
       .chips-wrap {
         display: flex;
@@ -631,7 +608,7 @@
       .send-bar .btn.full { width: auto; max-width: 100%; padding: var(--spacing-3) var(--spacing-4); }
       .send-bar .btn:not(.primary) { background: transparent; color: var(--ink); }
 
-      .agent-tab.active, .chip.active { background: var(--color-background-gray); color: var(--color-text-gray); box-shadow: none; }
+      .chip.active { background: var(--color-background-gray); color: var(--color-text-gray); box-shadow: none; }
 
       .session-meta, .session-date { font-size: var(--font-size-sm); }
 
