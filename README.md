@@ -23,10 +23,21 @@ OpenCode / AshleyCode only — Claude Code support is removed.
 - **Toolbar badge and completion notification** — `●` working, `✓` done, `!`
   failed, per annotated tab.
 - **Reload pill** — appears when the agent finishes, reloads the tab on click.
-- **Black theme** — follows `prefers-color-scheme`.
+- **Cropped preview** — the selected element's screenshot shows in the composer
+  before you send, and again as a thumbnail on every queued item.
+- **Editable queue** — click a queued comment, type, and it saves itself.
+- **Plain actions** — `Add`, `Send`, back arrow. No `Add & finish`, no
+  `Send 3 to OpenCode`, no helper text.
+- **Animal avatar per chat** — deterministic emoji from the session id, so a
+  conversation keeps the same animal across reloads.
+- **Running chats first** — the picker sorts active sessions above idle ones and
+  can close the idle ones from the actions menu.
+- **Light and dark** — header toggle, remembered in `chrome.storage.local`.
 - **Keyboard shortcuts** — `Alt+Shift+A` opens the panel, `Alt+Shift+S` opens it
   and starts element selection.
 - **Shadows instead of borders** — all edges are `box-shadow` rings.
+- **Astryx tokens** — the panel styles itself from Meta's Astryx neutral theme,
+  vendored under `vendor/astryx/`.
 
 ## Install
 
@@ -75,16 +86,22 @@ Alt+Shift+A        panel
 pick chat          link tab
 Select element     click element
 write instruction
-Add & finish       Send
+Add                queue it
+Send               deliver
 ```
 
 Done = chip `Finished` + `Reload page` button. Tab badge flips `●` to `✓`.
+
+Click a queued comment to edit it: typing saves after 700 ms, blurring saves at
+once, `Esc` discards. Hover a row for copy and remove; the `…` menu holds
+`Copy all` and `Clear queue`.
 
 First send asks site access. Allow it. Screenshot needs `<all_urls>`; `activeTab` drops on navigation.
 
 ### 4. Theme
 
-Header icon cycles `Auto -> Light -> Dark`. Saves in `chrome.storage.local`.
+Header icon cycles `Light ⇄ Dark`. First run follows the OS preference, then the
+choice is remembered in `chrome.storage.local`.
 
 ### 5. Shortcuts
 

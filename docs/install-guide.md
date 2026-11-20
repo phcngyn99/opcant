@@ -96,12 +96,13 @@ talk to the same plugin, so you do not need both.
    The panel shows something like `button #submit`.
 6. Type the instruction, for example
    `Change the button color to orange`.
-7. **Add & finish** puts it in the queue, then **Send 1 to OpenCode** delivers
-   it.
+7. **Add** puts it in the queue, then **Send** delivers it.
 8. The agent receives a prompt containing the page URL, title, viewport,
    selector, tag, role, visible text, bounding box, and a cropped screenshot.
 
-Queue several annotations before sending if you have a list of changes.
+Queue several annotations before sending if you have a list of changes. Click a
+queued comment to edit it; typing autosaves, `Esc` discards. Running chats sort
+first, and the `…` menu can close the idle ones.
 
 ---
 
@@ -217,7 +218,7 @@ is still working.
 
 | Layer | Path |
 |---|---|
-| Plugin fork | `<repo>/plugin/` |
+| Plugin fork | `<repo>/plugin/` (symlinked as `opencode-annotate-repo`) |
 | Extension fork | `<repo>` (repo root is the unpacked extension) |
 | Symlink | `~/.config/opencode/plugins/opencode-annotate-repo` -> `<repo>/plugin` |
 | Selected in config | `"plugins": ["./plugins/opencode-annotate-repo/v2/index.js"]` |

@@ -1,17 +1,19 @@
 # OpenCode Annotate — custom fork
 
 Fork of [eagleeyejack/opencode-chrome-annotation-extension](https://github.com/eagleeyejack/opencode-chrome-annotation-extension)
-(`1.6.1`, GPL-3.0). Adds agent activity feedback in the panel and keyboard
-shortcuts. Upstream licence and attribution are kept.
+(`1.6.1`, GPL-3.0). Adds agent status, cropped previews, an editable queue, a
+simplified UI and Astryx styling. Upstream licence and attribution are kept.
 
 ## What changed
 
 | File | Change |
 |---|---|
-| `manifest.json` | `name` → "OpenCode Annotate (custom)", `version_name` → `1.6.1-custom.1`, new `commands` block, `notifications` permission |
-| `background.js` | `chrome.commands.onCommand` handler, `fetchClaimActivity()`, `activity` field in `panel_get_state`, toolbar badge + notification on run completion |
-| `sidepanel.js` | `state.activity`, `activityNode()` badge, 2.5s activity poll (paused while typing) |
-| `sidepanel.html` | `.activity` badge styles, states, reduced-motion guard |
+| `manifest.json` | `name` → "OpenCode Annotate (custom)", `version_name` → `1.6.1-custom.1`, `commands` block, `notifications` permission |
+| `background.js` | `chrome.commands.onCommand`, `fetchClaimActivity()`, toolbar badge + completion notification, `selection_pick` preview capture, `queue_shots`, `update_queue`, `clear_history`, activity in `panel_get_state` |
+| `plugin/v2/index.js` | `/activity` endpoint, `activities` in `/status`, `running` flag in `/sessions` |
+| `sidepanel.js` | activity badge, light/dark toggle, animal avatars, queue editing with autosave, plain verbs, back-icon button, session sorting |
+| `sidepanel-picker.js` | no agent filter, no `All` chip, running-first sort, project toggle in the footer, `…` menu with close-inactive and select mode |
+| `sidepanel.html` | Astryx tokens, shadow rings, preview and thumbnail styles, menu styles |
 
 The badge reads the plugin's `GET /activity?sessionId=...` endpoint, which only
 exists in the forked plugin at
@@ -19,13 +21,16 @@ exists in the forked plugin at
 
 ## Install
 
-Plugin (already wired in `~/.config/opencode/opencode.jsonc`):
+Plugin (wired in `~/.config/opencode/opencode.jsonc`):
 
 ```jsonc
 "plugins": [
-  "./plugins/opencode-annotate-custom/v2/index.js"
+  "./plugins/opencode-annotate-repo/v2/index.js"
 ]
 ```
+
+where `~/.config/opencode/plugins/opencode-annotate-repo` is a symlink to
+`<repo>/plugin`.
 
 Restart OpenCode after changing it.
 
@@ -44,7 +49,9 @@ the same plugin; only this one shows the status badge.
 |---|---|
 | Open panel | toolbar icon, or `Alt+Shift+A` |
 | Open panel and start selecting | `Alt+Shift+S` |
-| Annotate | Select element → type → Add & finish → Send |
+| Annotate | Select element → type → Add → Send |
+| Edit a queued item | click its text, type, it autosaves |
+| Close idle chats | picker `…` → `Close N inactive` |
 
 Shortcut bindings can be changed at `chrome://extensions/shortcuts`.
 
@@ -105,11 +112,36 @@ Expected:
 
 ## Theme toggle
 
-A cycle button sits in the panel header (and the picker header): `system → light →
-dark`. It writes `data-theme` on `<html>`, which Astryx's theme CSS already
-honours (`html[data-theme="light"|"dark"] { color-scheme: … }`), so no palette
-duplication is involved. Choice persists in `chrome.storage.local` under `theme`;
-`system` removes the attribute and hands control back to `prefers-color-scheme`.
+Sun/moon button in the panel and picker headers, cycling `Light ⇄ Dark`. First
+run seeds from `prefers-color-scheme`; after that the choice persists in
+`chrome.storage.local` under `theme` and is written to `data-theme` on `<html>`,
+which Astryx's theme CSS already scopes (`html[data-theme="light"|"dark"]`).
+
+## Simplified UI
+
+The panel is deliberately terse:
+
+- `Add` and `Send`, no `Add & finish`, no `Send 3 to OpenCode`
+- no helper line under the composer
+- back arrow instead of a `Switch` button
+- `Copy all` / `Clear queue` behind one `…` menu, per-row copy/remove on hover
+- no agent filter tabs, no `All` chip; clicking the active project chip clears it
+- queue rows show the cropped screenshot, edited inline with autosave
+
+## Cropped preview and queue thumbnails
+
+`selection_pick` captures the visible tab and crops to the element rect, storing
+it as `session.previewUrl`. The composer shows it, and submitting reuses it so a
+single capture happens per annotation. Queued items fetch their stored data URL
+through `queue_shots`, cached in `state.queueShots` and cleared when the queue
+drains.
+
+## Session avatars and ordering
+
+Each chat gets an animal emoji derived from a hash of its session id: stable per
+chat, different between chats. No network assets, no icon package. Sessions with
+`running: true` sort first; `running` comes from the plugin's activity map, and
+the close-inactive menu stays hidden when the plugin does not report it.
 
 ## Astryx tokens
 
@@ -133,19 +165,6 @@ vendored: the panel is vanilla JS with no build step, and React/StyleX cannot be
 loaded into an MV3 extension from a CDN. Only the token layer is used; panel
 component styles follow Astryx conventions — soft elevation (`--shadow-low/-med`),
 hairline rings, the radius scale, and the `--font-size-*` ramp.
-
-## Black theme
-
-The panel follows `prefers-color-scheme: dark`. Palette inverts to near-black
-(`--paper #08090b`, `--surface #121418`, `--ink #eef1f7`), and two semantic tokens
-keep filled surfaces readable in both themes:
-
-- `--on-ink` — text colour for anything painted with `background: var(--ink)`
-  (primary button, queue badges, count chips, active tabs, element bar)
-- `--ink-hover` — hover fill for the primary button
-
-Without those, `color: #ffffff` stayed hard-coded and every inverted surface
-turned white-on-white or black-on-black.
 
 ## OpenCode only
 
