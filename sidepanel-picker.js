@@ -180,6 +180,8 @@ function sessionSelectNode(item, isSelected) {
 
 function sessionRowClass(item, isSelected) {
   let className = "session-row";
+  if (item.running === false)
+    className += " idle";
   if (isSelected)
     className += " selected";
   if (state.animateList)

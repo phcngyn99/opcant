@@ -649,6 +649,12 @@
       .session-row.selected:hover { background: var(--peri-tint); }
       .session-row.unselectable { color: var(--ink-2); }
       .session-row.unselectable, .session-row.unselectable:hover { background: transparent; box-shadow: none; }
+      .session-row.idle .session-item { color: var(--ink-2); }
+      .session-row.idle .session-name { font-weight: 400; }
+      .session-row.idle .session-icon { opacity: 0.55; filter: grayscale(1); }
+      .session-row.idle:hover { background: var(--surface); box-shadow: var(--shadow-low); }
+      .session-row.idle:hover .session-item, .session-row.selected .session-item { color: var(--ink); }
+      .session-row.idle:hover .session-icon, .session-row.selected .session-icon { opacity: 1; filter: none; }
       .session-row .session-item { flex: 1 1 auto; min-width: 0; }
       .session-item {
         display: block;
