@@ -62,8 +62,13 @@ function h(tag, props = {}, children = []) {
   if (props.checked !== undefined)
     node.checked = Boolean(props.checked);
   if (props.attrs) {
-    for (const [key, value] of Object.entries(props.attrs))
-      node.setAttribute(key, String(value));
+    for (const [key, value] of Object.entries(props.attrs)) {
+      if (value === false || value === null || value === undefined) {
+        node.removeAttribute(key);
+        continue;
+      }
+      node.setAttribute(key, value === true ? "" : String(value));
+    }
   }
   if (props.on) {
     for (const [event, handler] of Object.entries(props.on))
