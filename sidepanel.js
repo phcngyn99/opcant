@@ -85,6 +85,7 @@ const ICON_PATHS = {
   sun: '<circle cx="6" cy="6" r="2.4"/><path d="M6 .6v1.6M6 9.8v1.6M.6 6h1.6M9.8 6h1.6M2.2 2.2l1.1 1.1M8.7 8.7l1.1 1.1M9.8 2.2L8.7 3.3M3.3 8.7L2.2 9.8"/>',
   moon: '<path d="M9.6 7.4A4.2 4.2 0 0 1 4.6 2.4a4.6 4.6 0 1 0 5 5z"/>',
   auto: '<circle cx="6" cy="6" r="4.6"/><path d="M6 1.4v9.2" /><path d="M6 1.4a4.6 4.6 0 0 1 0 9.2z" fill="currentColor" stroke="none"/>',
+  back: '<path d="M10 6H2M5.2 2.8L2 6l3.2 3.2"/>',
   more: '<circle cx="2.6" cy="6" r=".9"/><circle cx="6" cy="6" r=".9"/><circle cx="9.4" cy="6" r=".9"/>',
   copy: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><path d="M8.5 3.5v-1a1 1 0 0 0-1-1h-5a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h1"/>'
 };
@@ -684,7 +685,7 @@ function sendBarNode() {
   if (!count)
     return null;
   const composing = state.selection?.phase === "locked";
-  let label = `Send ${count} to ${agentLabel(state.claim?.agent)}`;
+  const label = "Send";
   if (state.pending)
     label = "Sending…";
   return h("div", { className: "send-bar" }, [
@@ -739,11 +740,10 @@ function selectionNode() {
     }
   });
   root.appendChild(textarea);
-  root.appendChild(h("div", { className: "hint", text: "Enter adds to the queue. Shift+Enter for a new line. Esc cancels." }));
   root.appendChild(h("div", { className: "row" }, [
     h("button", {
       className: "btn primary grow",
-      text: state.pending ? "Adding…" : "Add to queue",
+      text: state.pending ? "Adding…" : "Add",
       attrs: { type: "button" },
       disabled: state.pending,
       on: { click: () => submitSelection(true) }
@@ -1117,11 +1117,10 @@ function linkedChatNode() {
     ]),
     themeButtonNode(),
     h("button", {
-      className: "btn small",
-      text: "Switch",
-      attrs: { type: "button", title: "Disconnect and pick another chat", "aria-label": "Disconnect and pick another chat" },
+      className: "icon-btn",
+      attrs: { type: "button", title: "Back to chats", "aria-label": "Back to chats" },
       on: { click: disconnectTab }
-    })
+    }, [icon("back")])
   ]);
 }
 

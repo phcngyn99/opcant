@@ -351,7 +351,7 @@ function sessionsNode() {
   const rows = sessions
     .filter((item) => !state.activeProject || (item.directory || "") === state.activeProject)
     .filter(matches)
-    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    .sort((a, b) => Number(b.running === true) - Number(a.running === true) || (b.updatedAt || 0) - (a.updatedAt || 0));
 
   const searchRow = h("div", { className: "row" }, [
     (() => {
@@ -368,16 +368,17 @@ function sessionsNode() {
     })()
   ]);
   root.appendChild(searchRow);
+  let projectsToggle = null;
   if (groups.length > 1) {
     const showAllChips = state.showAllProjects || searching;
-    const chipDefs = [{ label: `All (${sessions.length})`, value: "" }].concat(groups.map((group) => ({
+    const chipDefs = groups.map((group) => ({
       label: `${projectNameFor(group.directory)} (${group.items.length})`,
       value: group.directory
-    })));
+    }));
     const maxProjects = state.chipFit == null ? 3 : state.chipFit;
-    let headDefs = chipDefs.slice(0, 1 + Math.min(3, groups.length));
+    let headDefs = chipDefs.slice(0, Math.min(3, groups.length));
     if (!showAllChips && groups.length > maxProjects)
-      headDefs = chipDefs.slice(0, 1 + maxProjects);
+      headDefs = chipDefs.slice(0, maxProjects);
     if (state.activeProject && !headDefs.some((def) => def.value === state.activeProject)) {
       const activeDef = chipDefs.find((def) => def.value === state.activeProject);
       if (activeDef)
@@ -389,7 +390,7 @@ function sessionsNode() {
       attrs: { type: "button", "aria-pressed": state.activeProject === def.value },
       on: {
         click: () => {
-          state.activeProject = def.value;
+          state.activeProject = state.activeProject === def.value ? "" : def.value;
           state.chipFit = null;
           render();
         }
@@ -410,10 +411,11 @@ function sessionsNode() {
     for (const def of headDefs)
       chipsRow.appendChild(chipFor(def));
     chipsWrap.appendChild(chipsRow);
+    root.appendChild(chipsWrap);
     if (tailDefs.length || showAllChips) {
-      chipsWrap.appendChild(h("button", {
+      projectsToggle = h("button", {
         className: "chip toggle",
-        text: showAllChips ? "Fewer" : `+${tailDefs.length} project${tailDefs.length === 1 ? "" : "s"}`,
+        text: showAllChips ? "Fewer projects" : `+${tailDefs.length} project${tailDefs.length === 1 ? "" : "s"}`,
         attrs: { type: "button", "aria-expanded": String(showAllChips), "aria-label": showAllChips ? "Show recent projects only" : "Show all projects" },
         on: {
           click: () => {
@@ -422,9 +424,8 @@ function sessionsNode() {
             animateChipsOnce();
           }
         }
-      }));
+      });
     }
-    root.appendChild(chipsWrap);
     if (showAllChips && tailDefs.length) {
       const moreRow = h("div", { className: `chips-more${state.animateChips ? " anim" : ""}` });
       for (const def of tailDefs)
@@ -459,6 +460,8 @@ function sessionsNode() {
   }
   rows.forEach((item, index) => listContainer.appendChild(sessionRowNode(item, index, linkedId)));
   root.appendChild(listContainer);
+  if (projectsToggle)
+    root.appendChild(h("div", { className: "chips-foot" }, [projectsToggle]));
   return root;
 }
 
