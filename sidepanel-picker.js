@@ -287,6 +287,7 @@ function sessionsNode() {
       h("div", { className: "title", text: "Connect this tab to a chat" })
     ]),
     h("div", { className: "row" }, [
+      themeButtonNode(),
       selectToggleNode(),
       h("button", {
         className: "icon-btn",

@@ -1,6 +1,7 @@
 // sidepanel.js - OpenCode annotation side panel UI
 const state = {
   loading: true,
+  theme: "system",
   tab: null,
   claim: null,
   activity: null,
@@ -80,6 +81,9 @@ const ICON_PATHS = {
   check: '<path d="M2 6.4l2.6 2.6L10 3.4"/>',
   trash: '<path d="M1.8 3.2h8.4M4.4 3.2V2.2h3.2v1M2.8 3.2l.5 6.8h5.4l.5-6.8M4.9 5.4v2.8M7.1 5.4v2.8"/>',
   plug: '<path d="M4.2 1.2v2.6M7.8 1.2v2.6M2.6 3.8h6.8v1.8a3.4 3.4 0 0 1-6.8 0V3.8zM6 9v1.8"/>',
+  sun: '<circle cx="6" cy="6" r="2.4"/><path d="M6 .6v1.6M6 9.8v1.6M.6 6h1.6M9.8 6h1.6M2.2 2.2l1.1 1.1M8.7 8.7l1.1 1.1M9.8 2.2L8.7 3.3M3.3 8.7L2.2 9.8"/>',
+  moon: '<path d="M9.6 7.4A4.2 4.2 0 0 1 4.6 2.4a4.6 4.6 0 1 0 5 5z"/>',
+  auto: '<circle cx="6" cy="6" r="4.6"/><path d="M6 1.4v9.2" /><path d="M6 1.4a4.6 4.6 0 0 1 0 9.2z" fill="currentColor" stroke="none"/>',
   copy: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><path d="M8.5 3.5v-1a1 1 0 0 0-1-1h-5a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h1"/>'
 };
 
@@ -1016,6 +1020,7 @@ function linkedChatNode() {
       ]),
       activityNode()
     ]),
+    themeButtonNode(),
     h("button", {
       className: "btn small",
       text: "Switch",
@@ -1142,7 +1147,53 @@ document.addEventListener("keydown", (event) => {
   cancelSelection();
 });
 
+const THEME_ORDER = ["system", "light", "dark"];
+const THEME_LABEL = { system: "Auto", light: "Light", dark: "Dark" };
+
+function applyTheme(theme) {
+  state.theme = THEME_ORDER.includes(theme) ? theme : "system";
+  const root = document.documentElement;
+  // Astryx theme.css sets color-scheme for html[data-theme]; removing the
+  // attribute hands control back to prefers-color-scheme.
+  if (state.theme === "system")
+    delete root.dataset.theme;
+  else
+    root.dataset.theme = state.theme;
+}
+
+async function readTheme() {
+  try {
+    const stored = await chrome.storage?.local?.get?.("theme");
+    return stored?.theme || "system";
+  } catch {
+    return "system";
+  }
+}
+
+function themeButtonNode() {
+  const next = THEME_ORDER[(THEME_ORDER.indexOf(state.theme) + 1) % THEME_ORDER.length];
+  return h("button", {
+    className: "icon-btn theme-btn",
+    attrs: {
+      type: "button",
+      title: `Theme: ${THEME_LABEL[state.theme]} — click for ${THEME_LABEL[next]}`,
+      "aria-label": `Theme: ${THEME_LABEL[state.theme]}. Change theme to ${THEME_LABEL[next]}`
+    },
+    on: { click: cycleTheme }
+  }, [icon(state.theme === "light" ? "sun" : state.theme === "dark" ? "moon" : "auto", 14)]);
+}
+
+function cycleTheme() {
+  const next = THEME_ORDER[(THEME_ORDER.indexOf(state.theme) + 1) % THEME_ORDER.length];
+  applyTheme(next);
+  try {
+    chrome.storage?.local?.set?.({ theme: next });
+  } catch {}
+  render();
+}
+
 (async () => {
+  applyTheme(await readTheme());
   await refreshState();
   fetchSessions();
 })();

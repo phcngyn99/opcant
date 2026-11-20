@@ -103,6 +103,14 @@ Expected:
 {"sessionId":"ses_xxx","activity":{"state":"done","since":"2026-11-20T06:15:38.684Z"},"claimed":true}
 ```
 
+## Theme toggle
+
+A cycle button sits in the panel header (and the picker header): `system → light →
+dark`. It writes `data-theme` on `<html>`, which Astryx's theme CSS already
+honours (`html[data-theme="light"|"dark"] { color-scheme: … }`), so no palette
+duplication is involved. Choice persists in `chrome.storage.local` under `theme`;
+`system` removes the attribute and hands control back to `prefers-color-scheme`.
+
 ## Astryx tokens
 
 `vendor/astryx/theme.css` is the Astryx neutral theme (`@astryxdesign/theme-neutral@0.4.1`,

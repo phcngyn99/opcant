@@ -125,6 +125,7 @@
         min-height: 32px; padding: var(--spacing-1) var(--spacing-2);
       }
       .btn.full { width: 100%; }
+      .theme-btn { flex: none; }
       .btn.ghost { box-shadow: none; background: transparent; color: var(--ink-2); }
       .btn.ghost:hover:not(:disabled) { background: var(--wash); color: var(--ink); }
       .btn.confirm {
@@ -349,8 +350,15 @@
 
       /* Linked chat header */
       .linked {
-        display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: var(--spacing-2);
+        display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: start; gap: var(--spacing-2);
       }
+      .header .title {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .header .row:first-child { min-width: 0; flex: 1 1 auto; }
       .linked-label {
         font-weight: 600;
         letter-spacing: -0.01em;
