@@ -741,9 +741,9 @@ function selectionNode() {
     }
   });
   root.appendChild(textarea);
-  root.appendChild(h("div", { className: "row" }, [
+  root.appendChild(h("div", { className: "row split" }, [
     h("button", {
-      className: "btn primary grow",
+      className: "btn primary",
       text: state.pending ? "Adding…" : "Add",
       attrs: { type: "button" },
       disabled: state.pending,
