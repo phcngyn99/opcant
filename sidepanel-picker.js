@@ -66,8 +66,6 @@ function animateListOnce() {
 
 function sessionRowClass(item) {
   let className = "session-row";
-  if (item.running === false)
-    className += " idle";
   if (state.animateList)
     className += " anim";
   return className;

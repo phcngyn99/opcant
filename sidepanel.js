@@ -241,6 +241,7 @@ async function refreshState() {
     if (tab?.id) {
       const response = await chrome.runtime.sendMessage({ type: "panel_get_state", tabId: tab.id });
       if (response?.ok) {
+        const hadClaim = Boolean(state.claim);
         const previousPhase = state.selection?.phase;
         const previousActivityState = state.activity?.state || null;
         state.tab = response.tab;
@@ -255,6 +256,8 @@ async function refreshState() {
         state.selection = response.selection;
         if (!response.selection)
           state.draft = "";
+        if (hadClaim && !response.claim && !state.fetchingSessions)
+          void fetchSessions();
         if (previousPhase !== "locked" && response.selection?.phase === "locked")
           state.focusTextarea = true;
         applyActivityChange(previousActivityState);

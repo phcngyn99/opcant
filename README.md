@@ -13,7 +13,6 @@ OpenCode / AshleyCode only — Claude Code support is removed.
 |---|---|
 | `manifest.json`, `background.js`, `sidepanel.*`, `injected/` | Chrome MV3 extension (side panel) — ships no icon files; manifest declares none |
 | `plugin/` | Forked `opencode-annotate` plugin: local HTTP server + `/activity` endpoint |
-| `CUSTOM.md` | Every change against upstream, with the reasoning |
 | `scripts/verify-send-loss-proof.mjs` | Queue/send regression proofs, 9 cases |
 
 ## Features beyond upstream
@@ -32,8 +31,8 @@ OpenCode / AshleyCode only — Claude Code support is removed.
   `Send 3 to OpenCode`, no helper text, no logo.
 - **Animal avatar per chat** — deterministic emoji from the session id, so a
   conversation keeps the same animal across reloads.
-- **Running chats first** — the picker sorts active sessions above idle ones and
-  closes the idle ones from the actions menu in one click.
+- **Running chats first** — the picker sorts active sessions above idle ones;
+  rows are never grayed out, because the plugin's `running` flag can be stale.
 - **Light and dark** — header toggle, remembered in `chrome.storage.local`.
 - **Keyboard shortcuts** — `Alt+Shift+A` opens the panel, `Alt+Shift+S` opens it
   and starts element selection.
@@ -141,10 +140,10 @@ Serve the repo root with any static server. `sidepanel-dev.js` also exposes
 git clone --depth 1 https://github.com/eagleeyejack/opencode-chrome-annotation-extension upstream
 ```
 
-Diff against this repo, keep the fork changes described in `CUSTOM.md`, then bump
-`version_name` in `manifest.json`.
+Diff against this repo, keep the fork changes described in this README's
+"Features beyond upstream" section, then bump `version_name` in `manifest.json`.
 
 ## Licence
 
-GPL-3.0. Original work © the upstream authors; see `LICENSE` and `CUSTOM.md` for
-the fork's changes.
+GPL-3.0. Original work © the upstream authors; see `LICENSE` and the "Features
+beyond upstream" section for the fork's changes.

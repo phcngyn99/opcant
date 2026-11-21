@@ -157,3 +157,17 @@ Newest last. Do not edit or delete entries; correct mistakes with a new entry.
   `Uncaught (in promise) TypeError: Assignment to constant variable` with the
   `sendBarNode` stack. Event-level instrumentation alone looked like "handler
   not attached" — the stuck `pending` guard was the real early-return.
+
+## 2026-11-21 — CUSTOM.md removed; picker refreshes on return
+
+- CUSTOM.md removed at the user's request; the fork-change list now lives only
+  in README.md ("Features beyond upstream"). References updated in AGENTS.md
+  and README.md (layout table, update-flow step, licence note).
+- Picker session refresh on return: "Back to chats" only disconnected and
+  re-rendered, so the picker showed a stale list. `refreshState` now calls
+  `fetchSessions()` whenever a claim transitions to none (and
+  `fetchingSessions` is not already in flight).
+- The picker's gray-out of `running === false` rows was removed at the user's
+  request: the plugin's `running` flag comes from the activity map and can be
+  stale or wrong; dimming a live chat is worse than uniform rows.
+  Running-first sort stays.
