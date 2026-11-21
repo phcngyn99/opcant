@@ -13,6 +13,19 @@
     "z-index:2147483647",
     "pointer-events:none"
   ].join(";");
+  const bullseyeSvg = [
+    '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">',
+    '<circle cx="16" cy="16" r="15" fill="#d93a2b"/>',
+    '<circle cx="16" cy="16" r="11.5" fill="#fafafa"/>',
+    '<circle cx="16" cy="16" r="8" fill="#d93a2b"/>',
+    '<circle cx="16" cy="16" r="4.5" fill="#fafafa"/>',
+    '<circle cx="16" cy="16" r="2" fill="#d93a2b"/>',
+    "</svg>"
+  ].join("");
+  const bullseyeCursor = `url("data:image/svg+xml,${encodeURIComponent(bullseyeSvg)}") 16 16, crosshair`;
+  const cursorStyle = document.createElement("style");
+  cursorStyle.textContent = `* { cursor: ${bullseyeCursor} !important; }`;
+  document.documentElement.appendChild(cursorStyle);
   const box = document.createElement("div");
   box.style.cssText = [
     "position:fixed",
@@ -177,6 +190,7 @@
       chrome.runtime.onMessage.removeListener(onMessage);
     } catch {}
     root.remove();
+    cursorStyle.remove();
     if (globalThis.__opc_selection === api)
       globalThis.__opc_selection = null;
   }
