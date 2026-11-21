@@ -650,8 +650,18 @@
       }
       .session-row .session-item { flex: 1 1 auto; min-width: 0; }
       .session-row .session-close {
-        flex: none; width: 24px; height: 24px; padding: 0;
-        opacity: 0; transition: opacity 120ms ease;
+        flex: none;
+        width: 26px; height: 26px;
+        align-self: center;
+        margin-right: var(--spacing-2);
+        border-radius: var(--r);
+        color: var(--ink-2);
+        opacity: 0;
+        transition: opacity 120ms ease, color 120ms ease, background-color 120ms ease;
+      }
+      .session-row .session-close:hover:not(:disabled) {
+        background: transparent;
+        color: var(--red-ink);
       }
       .session-row:hover .session-close,
       .session-row:focus-within .session-close { opacity: 1; }
