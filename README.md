@@ -11,7 +11,7 @@ OpenCode / AshleyCode only — Claude Code support is removed.
 
 | Path | What |
 |---|---|
-| `manifest.json`, `background.js`, `sidepanel.*`, `injected/` | Chrome MV3 extension (side panel) — ships no icon files; manifest declares none |
+| `manifest.json`, `background.js`, `sidepanel.*`, `injected/` | Chrome MV3 extension (side panel) — bullseye icons in `icons/`, declared in the manifest |
 | `plugin/` | Forked `opencode-annotate` plugin: local HTTP server + `/activity` endpoint |
 | `scripts/verify-send-loss-proof.mjs` | Queue/send regression proofs, 9 cases |
 
