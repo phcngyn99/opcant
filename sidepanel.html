@@ -192,7 +192,15 @@
       .grow { flex: 1 1 auto; min-width: 0; }
       .row { display: flex; align-items: center; gap: var(--spacing-2); }
       .row.split { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-2); }
-      .row.split .btn.ghost { box-shadow: 0 0 0 1px var(--line); }
+      .row.split .btn.ghost {
+        box-shadow: none;
+        background: var(--red-tint);
+        color: var(--red-ink);
+      }
+      .row.split .btn.ghost:hover:not(:disabled) {
+        background: var(--red);
+        color: var(--color-on-error);
+      }
       .row.end { justify-content: flex-end; }
       .row.between { justify-content: space-between; align-items: flex-start; }
       .section-head { display: flex; align-items: center; gap: var(--spacing-1); }
@@ -751,6 +759,7 @@
       .history-item .queue-selector { font-family: var(--sans); }
 
       .send-bar .send { width: 100%; background: var(--color-background-blue); color: var(--color-text-blue); box-shadow: var(--shadow-low); }
+      .send-bar .send:disabled { background: var(--color-background-muted); color: var(--ink-2); box-shadow: none; }
       .send-bar .send:hover:not(:disabled) { filter: brightness(1.04); }
 
       .chip.active { background: var(--color-background-gray); color: var(--color-text-gray); box-shadow: none; }

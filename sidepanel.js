@@ -666,17 +666,12 @@ function actionNode() {
 
 function sendBarNode() {
   const count = state.queue.length;
-  if (!count)
-    return null;
-  const composing = state.selection?.phase === "locked";
-  let label = "Send";
-  if (state.pending)
-    label = "Sending…";
+  const label = state.pending ? "Sending…" : "Send";
   return h("div", { className: "send-bar" }, [
     h("button", {
-      className: "btn full send",
-      attrs: { type: "button" },
-      disabled: state.pending,
+      className: `btn full send${count ? "" : " empty"}`,
+      attrs: { type: "button", title: count ? undefined : "Queue is empty" },
+      disabled: state.pending || !count,
       on: { click: sendQueue }
     }, [icon("send"), h("span", { text: label })])
   ]);
