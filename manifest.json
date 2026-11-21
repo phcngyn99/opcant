@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "OpenCode Annotate (custom)",
-  "short_name": "Annotate",
+  "name": "Codex Annotate",
+  "short_name": "Codex",
   "version": "1.6.1",
   "version_name": "1.6.1-custom.1",
-  "description": "Point at what's broken and send it to your OpenCode or AshleyCode agent, with screenshot and selector.",
+  "description": "Point at what's broken and send it to your coding agent, with screenshot and selector.",
   "homepage_url": "https://github.com/eagleeyejack/opencode-chrome-annotation-extension",
   "minimum_chrome_version": "114",
   "commands": {

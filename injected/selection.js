@@ -19,9 +19,9 @@
   const box = document.createElement("div");
   box.style.cssText = [
     "position:fixed",
-    "border:2px solid rgba(165,180,252,0.95)",
-    "background:rgba(165,180,252,0.18)",
-    "box-shadow:0 0 0 1px rgba(0,0,0,0.12)",
+    "border:2px solid rgba(24,26,31,0.92)",
+    "background:rgba(127,127,127,0.16)",
+    "box-shadow:0 0 0 1px rgba(255,255,255,0.55)",
     "pointer-events:none",
     "display:none"
   ].join(";");
@@ -42,10 +42,10 @@
   ].join(";");
   const pathLine = document.createElement("div");
   pathLine.style.cssText = "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
-  const cssLine = document.createElement("div");
-  cssLine.style.cssText = "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(248,250,252,0.75);";
+  const cssTable = document.createElement("div");
+  cssTable.style.cssText = "display:grid;grid-template-columns:max-content max-content;gap:1px 12px;margin-top:3px;";
   pathLabel.appendChild(pathLine);
-  pathLabel.appendChild(cssLine);
+  pathLabel.appendChild(cssTable);
   root.appendChild(pathLabel);
   document.documentElement.appendChild(root);
 
@@ -142,19 +142,19 @@
     applyHighlightRect(el.getBoundingClientRect());
   }
   function resetHighlightStyle() {
-    box.style.borderColor = "rgba(165,180,252,0.95)";
-    box.style.background = "rgba(165,180,252,0.18)";
+    box.style.borderColor = "rgba(24,26,31,0.92)";
+    box.style.background = "rgba(127,127,127,0.16)";
   }
-  function describeCss(el) {
+  function describeCssRows(el) {
     const s = getComputedStyle(el);
     const family = String(s.fontFamily).split(",")[0].replace(/["']/g, "").trim();
     return [
-      `bg ${s.backgroundColor}`,
-      `color ${s.color}`,
-      `font ${s.fontWeight} ${s.fontSize}/${Math.round(parseFloat(s.lineHeight) || 0)} ${family}`,
-      `radius ${s.borderTopLeftRadius}`,
-      `pad ${s.padding}`
-    ].join(" · ");
+      ["bg", s.backgroundColor],
+      ["color", s.color],
+      ["font", `${s.fontWeight} ${s.fontSize} ${family}`],
+      ["radius", s.borderTopLeftRadius],
+      ["pad", s.padding]
+    ];
   }
   function updatePathLabel(el, event) {
     if (!el) {
@@ -162,7 +162,16 @@
       return;
     }
     pathLine.textContent = `${el.tagName.toLowerCase()} ${buildSelector(el)}`.trim();
-    cssLine.textContent = describeCss(el);
+    cssTable.textContent = "";
+    for (const [key, value] of describeCssRows(el)) {
+      const keyCell = document.createElement("span");
+      keyCell.textContent = key;
+      keyCell.style.cssText = "color:rgba(248,250,252,0.6);";
+      const valueCell = document.createElement("span");
+      valueCell.textContent = value;
+      valueCell.style.cssText = "max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(248,250,252,0.85);";
+      cssTable.append(keyCell, valueCell);
+    }
     pathLabel.style.display = "block";
     pathLabel.style.left = "0px";
     pathLabel.style.top = "0px";
@@ -205,8 +214,8 @@
       width: rect.width,
       height: rect.height
     };
-    box.style.borderColor = "rgba(74,222,128,0.95)";
-    box.style.background = "rgba(74,222,128,0.15)";
+    box.style.borderColor = "rgba(24,26,31,0.98)";
+    box.style.background = "rgba(127,127,127,0.32)";
     send({
       type: "selection_pick",
       element: describeElement(el),

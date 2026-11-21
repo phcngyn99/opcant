@@ -1,4 +1,4 @@
-# opcant — OpenCode Annotate (custom)
+# opcant — Codex Annotate
 
 Point at a UI element in Chrome, write an instruction, and your OpenCode agent
 receives a cropped screenshot plus the element's selector and metadata.
@@ -75,7 +75,7 @@ chrome://extensions
 Developer mode ON
 Load unpacked
 pick this repo folder
-pin "OpenCode Annotate (custom)"
+pin "Codex Annotate"
 ```
 
 ### 3. Use
