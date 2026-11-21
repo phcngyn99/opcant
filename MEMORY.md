@@ -194,3 +194,18 @@ Newest last. Do not edit or delete entries; correct mistakes with a new entry.
   (--red-ink on transparent). Icon files must be copied into the test copy's
   icons/ subdirectory, not its root — a root-level cp is why loadUnpacked
   briefly failed on icon32.
+
+## 2026-11-21 — Codex Annotate rebrand + restyle
+
+- Product renamed to "Codex Annotate" (manifest name/short_name/description,
+  README, install guide). Plugin server APP_ID stays
+  "opencode-chrome-annotation" — discovery depends on it, do not rename.
+- Panel restyled Codex-style: primary buttons are ink-on-paper monochrome
+  (Add/Send), Cancel is a hairline ghost, cards and session rows are flat
+  with inset hairline rings instead of drop shadows, focus rings are ink.
+  The page selection overlay lost lavender/green for neutral dark outlines.
+  Older one-off color tweaks (green Add, red-pink Cancel, blue Send) were
+  replaced by this system.
+- The test browser is shared with the user: panel state flips mid-verification
+  (their picks/cancels reset selection sessions). Verify with explicit tabIds
+  and re-check state right before asserting.
