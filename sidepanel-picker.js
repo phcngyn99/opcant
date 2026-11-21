@@ -90,8 +90,32 @@ function sessionRowNode(item, index, linkedId) {
         state.connectingId === item.id ? h("span", { className: "session-date", text: "Connecting…" }) : null,
         h("span", { className: "session-date", text: formatRelative(item.updatedAt) })
       ])
-    ])
+    ]),
+    item.baseUrl ? h("button", {
+      className: "icon-btn session-close",
+      text: "×",
+      attrs: { type: "button", "aria-label": `Close session ${item.title || item.id}`, title: "Close" },
+      disabled: Boolean(state.connectingId),
+      on: { click: () => closeSession(item) }
+    }) : null
   ]);
+}
+
+async function closeSession(session) {
+  if (!session?.baseUrl || !session.id)
+    return;
+  try {
+    const response = await sendPanelMessage({
+      type: "close_session",
+      sessionId: session.id,
+      baseUrl: session.baseUrl
+    });
+    if (!response?.ok)
+      toast("error", response?.error || "Failed to close session");
+  } catch (error) {
+    toast("error", error?.message || String(error));
+  }
+  await fetchSessions();
 }
 
 function sessionsNode() {

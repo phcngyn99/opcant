@@ -649,6 +649,12 @@
         box-shadow: var(--shadow-low);
       }
       .session-row .session-item { flex: 1 1 auto; min-width: 0; }
+      .session-row .session-close {
+        flex: none; width: 24px; height: 24px; padding: 0;
+        opacity: 0; transition: opacity 120ms ease;
+      }
+      .session-row:hover .session-close,
+      .session-row:focus-within .session-close { opacity: 1; }
       .session-item {
         display: block;
         width: 100%;
