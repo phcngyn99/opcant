@@ -659,7 +659,7 @@ function actionNode() {
       className: `btn grow${hasQueue ? "" : " primary"}`,
       attrs: { type: "button" },
       on: { click: startAnnotation }
-    }, [icon("crosshair"), h("span", { text: hasQueue ? "Select another element" : "Select element" })]),
+    }, [icon("crosshair"), h("span", { text: hasQueue ? "Select again" : "Select" })]),
     state.addedTick ? addedTickNode() : null
   ]);
 }
