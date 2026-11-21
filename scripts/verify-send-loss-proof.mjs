@@ -107,7 +107,7 @@ const { annotationQueues, claimedTabs, createAnnotationQueueStore } = sandbox;
 assert.equal(typeof sandbox.sendQueuedAnnotations, "function", "sendQueuedAnnotations is defined");
 
 function seedEntry(tabId, comment) {
-  return annotationQueues.add(tabId, {
+  return annotationQueues.add(scopeOf(tabId), {
     comment,
     page: { url: "https://example.com/", title: "Example" },
     element: { selector: "#x", tag: "div", role: null, text: "hi", className: "a b" },
@@ -116,17 +116,20 @@ function seedEntry(tabId, comment) {
     createdAt: Date.now(),
   });
 }
-function setClaim(tabId) {
+function setClaim(tabId, sessionId = `sess-${tabId}`) {
   claimedTabs.set(tabId, {
-    sessionId: "sess-1",
+    sessionId,
     sessionLabel: "test",
     baseUrl: "http://127.0.0.1:39240",
     origin: "https://example.com/*",
     extensionVersion: "test",
   });
 }
+function scopeOf(tabId) {
+  return claimedTabs.get(tabId)?.sessionId ?? `sess-${tabId}`;
+}
 function historyJson(tabId) {
-  return JSON.stringify(annotationQueues.listHistory(tabId));
+  return JSON.stringify(annotationQueues.listHistory(scopeOf(tabId)));
 }
 
 // ---- 1. throw mid-batch ---------------------------------------------------
@@ -138,7 +141,7 @@ function historyJson(tabId) {
   const res = await sandbox.sendQueuedAnnotations({ id: tab });
   assert.equal(res.ok, false, "1: send reports failure");
   assert.equal(res.sent, 1, "1: one entry confirmed sent");
-  const remaining = annotationQueues.list(tab);
+  const remaining = annotationQueues.list(scopeOf(tab));
   // NOTE: JSON comparison because vm-realm arrays carry a different Array
   // prototype than this runner, which trips assert.deepStrictEqual.
   assert.equal(
@@ -153,13 +156,13 @@ function historyJson(tabId) {
     "1: screenshot payload stays in queue for retry"
   );
   assert.equal(res.unsent?.length, 2, "1: failure response carries unsent summaries");
-  const hist = annotationQueues.listHistory(tab);
+  const hist = annotationQueues.listHistory(scopeOf(tab));
   assert.equal(hist.length, 1, "1: one history record");
   assert.equal(hist[0].status, "partial", "1: history status partial");
   assert.equal(hist[0].sentCount, 1, "1: history sentCount");
   assert.equal(hist[0].totalCount, 3, "1: history totalCount");
   assert.match(hist[0].error, /connection refused/, "1: history error message");
-  assert.equal(sandbox.annotationQueues.getInFlight(tab), null, "1: in-flight cleared on completion");
+  assert.equal(sandbox.annotationQueues.getInFlight(scopeOf(tab)), null, "1: in-flight cleared on completion");
   assert.ok(!historyJson(tab).includes("data:image"), "1: history never duplicates screenshot bytes");
   console.log("PASS 1: throw mid-batch preserves failed entry + remainder, records partial history");
 }
@@ -170,30 +173,30 @@ function historyJson(tabId) {
   setClaim(tab);
   const ids = [await seedEntry(tab, "a"), await seedEntry(tab, "b"), await seedEntry(tab, "c")];
   // Simulate exactly what sendQueuedAnnotations persists before POSTing...
-  await annotationQueues.setInFlight(tab, {
+  await annotationQueues.setInFlight(scopeOf(tab), {
     attemptId: "attempt-restart-1",
     timestamp: Date.now(),
     entryIds: ids,
     totalCount: ids.length,
   });
   // ...then one POST succeeds + per-entry remove lands, then the worker dies.
-  await annotationQueues.remove(tab, ids[0]);
+  await annotationQueues.remove(scopeOf(tab), ids[0]);
   // "Restart": a brand-new store over the same persisted bytes recovers.
   const fresh = createAnnotationQueueStore();
   await fresh.restore();
-  const recoveredQueue = fresh.list(tab);
+  const recoveredQueue = fresh.list(scopeOf(tab));
   assert.equal(
     JSON.stringify(recoveredQueue.map((e) => e.id)),
     JSON.stringify([ids[1], ids[2]]),
     "2: restart leaves unsent entries in the store (no silent loss)"
   );
-  const recoveredHist = fresh.listHistory(tab);
+  const recoveredHist = fresh.listHistory(scopeOf(tab));
   assert.equal(recoveredHist.length, 1, "2: recovery records exactly one history entry");
   assert.equal(recoveredHist[0].status, "partial", "2: recovery status partial (1 of 3 delivered)");
   assert.equal(recoveredHist[0].sentCount, 1, "2: recovery sentCount derived from queue");
   assert.equal(recoveredHist[0].totalCount, 3, "2: recovery totalCount");
   assert.match(recoveredHist[0].error, /restart/i, "2: recovery error names the interruption");
-  assert.equal(fresh.getInFlight(tab), null, "2: orphaned in-flight snapshot consumed");
+  assert.equal(fresh.getInFlight(scopeOf(tab)), null, "2: orphaned in-flight snapshot consumed");
   assert.ok(!JSON.stringify(recoveredHist).includes("data:image"), "2: recovery history has no bytes");
   assert.equal(
     recoveredQueue[0].screenshot?.dataUrl,
@@ -213,12 +216,9 @@ function historyJson(tabId) {
     /not connected/,
     "3: still throws without a claim"
   );
-  assert.equal(annotationQueues.list(tab).length, 2, "3: queue untouched (old take() deleted it here)");
-  const hist = annotationQueues.listHistory(tab);
-  assert.equal(hist.length, 1, "3: failed attempt recorded");
-  assert.equal(hist[0].status, "failed", "3: history status failed");
-  assert.equal(hist[0].totalCount, 2, "3: history totalCount");
-  console.log("PASS 3: claim-missing send throws yet preserves queue + history");
+  assert.equal(annotationQueues.list(scopeOf(tab)).length, 2, "3: session queue untouched");
+  assert.equal(annotationQueues.listHistory(scopeOf(tab)).length, 0, "3: nothing recorded without a scope");
+  console.log("PASS 3: claim-missing send throws and leaves the session queue untouched");
 }
 
 // ---- 4. full success -------------------------------------------------------
@@ -231,8 +231,8 @@ function historyJson(tabId) {
   const res = await sandbox.sendQueuedAnnotations({ id: tab });
   assert.equal(res.ok, true, "4: send reports success");
   assert.equal(res.sent, 2, "4: both entries sent");
-  assert.equal(annotationQueues.list(tab).length, 0, "4: confirmed-sent entries removed");
-  const hist = annotationQueues.listHistory(tab);
+  assert.equal(annotationQueues.list(scopeOf(tab)).length, 0, "4: confirmed-sent entries removed");
+  const hist = annotationQueues.listHistory(scopeOf(tab));
   assert.equal(hist[0].status, "sent", "4: history status sent");
   assert.equal(hist[0].sentCount, 2, "4: history sentCount");
   console.log("PASS 4: full success drains queue and logs a sent attempt");
@@ -242,7 +242,7 @@ function historyJson(tabId) {
 {
   const tab = 105;
   for (let i = 0; i < 25; i++) {
-    await annotationQueues.recordAttempt(tab, {
+    await annotationQueues.recordAttempt(scopeOf(tab), {
       attemptId: `a-${i}`,
       timestamp: Date.now(),
       status: i % 2 ? "failed" : "sent",
@@ -252,11 +252,11 @@ function historyJson(tabId) {
       entryIds: [`id-${i}`],
     });
   }
-  const hist = annotationQueues.listHistory(tab);
+  const hist = annotationQueues.listHistory(scopeOf(tab));
   assert.equal(hist.length, 20, "5: history capped at last 20 attempts");
   assert.equal(hist[0].attemptId, "a-24", "5: most recent first");
   assert.ok(!JSON.stringify(hist).includes("data:image"), "5: no screenshot bytes in history");
-  console.log("PASS 5: history capped at 20/tab, metadata only");
+  console.log("PASS 5: history capped at 20 per session, metadata only");
 }
 
 // ---- 6. disconnect preserves -----------------------------------------------
@@ -264,7 +264,7 @@ function historyJson(tabId) {
   const tab = 106;
   setClaim(tab);
   await seedEntry(tab, "keep-me");
-  await annotationQueues.recordAttempt(tab, {
+  await annotationQueues.recordAttempt(scopeOf(tab), {
     attemptId: "a-disc",
     timestamp: Date.now(),
     status: "failed",
@@ -276,8 +276,8 @@ function historyJson(tabId) {
   const out = await sandbox.disconnectTab({ id: tab });
   assert.equal(out, true, "6: disconnect reports true");
   assert.equal(claimedTabs.get(tab), undefined, "6: claim cleared");
-  assert.equal(annotationQueues.list(tab).length, 1, "6: queue NOT wiped on disconnect");
-  assert.equal(annotationQueues.listHistory(tab).length, 1, "6: history NOT wiped on disconnect");
+  assert.equal(annotationQueues.list(scopeOf(tab)).length, 1, "6: queue NOT wiped on disconnect");
+  assert.equal(annotationQueues.listHistory(scopeOf(tab)).length, 1, "6: history NOT wiped on disconnect");
   console.log("PASS 6: disconnectTab preserves queue + history for retry after reconnect");
 }
 
@@ -316,7 +316,7 @@ function historyJson(tabId) {
   assert.equal(snap.hasScreenshot, true, "8: snapshot screenshot flag, not bytes");
   assert.ok(!JSON.stringify(res.history).includes("data:image"), "8: no dataUrl bytes in history");
   // Legacy record without snapshots normalizes safely (Copy disabled, no crash).
-  const legacy = await annotationQueues.recordAttempt(tab, {
+  const legacy = await annotationQueues.recordAttempt(scopeOf(tab), {
     attemptId: "a-legacy",
     timestamp: Date.now(),
     status: "sent",
@@ -329,7 +329,7 @@ function historyJson(tabId) {
   // prototype than this runner, which trips assert.deepStrictEqual.
   assert.equal(JSON.stringify(legacy.snapshots), "[]", "8: legacy record normalizes to empty snapshots");
   // Defensive strip: bytes smuggled into a snapshot never survive normalization.
-  const hostile = await annotationQueues.recordAttempt(tab, {
+  const hostile = await annotationQueues.recordAttempt(scopeOf(tab), {
     attemptId: "a-hostile",
     timestamp: Date.now(),
     status: "failed",
@@ -351,16 +351,16 @@ function historyJson(tabId) {
   fetchPlan.activity.push({
     status: 200,
     payload: {
-      sessionId: "sess-1",
-      activity: { sessionId: "sess-1", state: "working", since: "2026-11-20T06:00:00.000Z", detail: null },
+      sessionId: "sess-109",
+      activity: { sessionId: "sess-109", state: "working", since: "2026-11-20T06:00:00.000Z", detail: null },
     },
   });
   const state = await sandbox.runMessageAction({ type: "panel_get_state" }, { id: tab }, {});
   assert.equal(state.activity?.state, "working", "9: panel state carries the agent activity state");
   assert.equal(state.activity?.since, "2026-11-20T06:00:00.000Z", "9: activity since passes through");
-  assert.equal(state.activity?.sessionId, "sess-1", "9: activity names its chat");
-  assert.equal(state.claim?.sessionId, "sess-1", "9: activity does not disturb the claim");
-  assert.match(lastActivityUrl, /\/activity\?sessionId=sess-1$/, "9: probe targets the claimed chat");
+  assert.equal(state.activity?.sessionId, "sess-109", "9: activity names its chat");
+  assert.equal(state.claim?.sessionId, "sess-109", "9: activity does not disturb the claim");
+  assert.match(lastActivityUrl, /\/activity\?sessionId=sess-109$/, "9: probe targets the claimed chat");
 
   // A server that refuses the probe degrades to no badge, never a broken panel.
   fetchPlan.activity.push(new Error("connection refused"));
@@ -379,6 +379,23 @@ function historyJson(tabId) {
   assert.equal(unclaimed.activity, null, "9: unclaimed tab has no activity");
   assert.equal(activityCalls, before, "9: unclaimed tab issues no activity request");
   console.log("PASS 9: activity state reaches the panel and degrades to null when absent");
+}
+
+// ---- 10. queues are scoped per session --------------------------------------
+{
+  const tab = 110;
+  setClaim(tab, "sess-a");
+  await seedEntry(tab, "for A");
+  // Switch the same tab to session B: scope moves with the claim.
+  setClaim(tab, "sess-b");
+  assert.equal(annotationQueues.list("sess-b").length, 0, "10: session B starts with an empty queue");
+  assert.equal(annotationQueues.listHistory("sess-b").length, 0, "10: session B has no history");
+  assert.equal(annotationQueues.list("sess-a").length, 1, "10: session A keeps its queue");
+  const res = await sandbox.sendQueuedAnnotations({ id: tab });
+  assert.equal(res.ok, true, "10: send reports ok");
+  assert.equal(res.sent, 0, "10: nothing sent for session B");
+  assert.equal(annotationQueues.list("sess-a").length, 1, "10: session A queue untouched by B's send");
+  console.log("PASS 10: queue + history are scoped per session");
 }
 
 console.log("\nAll send-loss proofs passed: failed sends never drop entries.");

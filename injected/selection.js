@@ -5,6 +5,9 @@
       globalThis.__opc_selection.cleanup();
     } catch {}
   }
+  // Reloads orphan older injections (dead extension context, DOM still there);
+  // sweep every leftover root so only the fresh one remains.
+  document.querySelectorAll('[id="__opc_selection_root"]').forEach((node) => node.remove());
   const root = document.createElement("div");
   root.id = "__opc_selection_root";
   root.style.cssText = [
@@ -23,6 +26,27 @@
     "display:none"
   ].join(";");
   root.appendChild(box);
+  const pathLabel = document.createElement("div");
+  pathLabel.style.cssText = [
+    "position:fixed",
+    "z-index:2147483647",
+    "pointer-events:none",
+    "display:none",
+    "max-width:60vw",
+    "background:rgba(15,18,24,0.92)",
+    "color:#f8fafc",
+    "font:500 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace",
+    "padding:4px 8px",
+    "border-radius:6px",
+    "box-shadow:0 2px 8px rgba(0,0,0,0.35)"
+  ].join(";");
+  const pathLine = document.createElement("div");
+  pathLine.style.cssText = "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
+  const cssLine = document.createElement("div");
+  cssLine.style.cssText = "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(248,250,252,0.75);";
+  pathLabel.appendChild(pathLine);
+  pathLabel.appendChild(cssLine);
+  root.appendChild(pathLabel);
   document.documentElement.appendChild(root);
 
   const ROLE_BY_TAG = {
@@ -121,6 +145,38 @@
     box.style.borderColor = "rgba(165,180,252,0.95)";
     box.style.background = "rgba(165,180,252,0.18)";
   }
+  function describeCss(el) {
+    const s = getComputedStyle(el);
+    const family = String(s.fontFamily).split(",")[0].replace(/["']/g, "").trim();
+    return [
+      `bg ${s.backgroundColor}`,
+      `color ${s.color}`,
+      `font ${s.fontWeight} ${s.fontSize}/${Math.round(parseFloat(s.lineHeight) || 0)} ${family}`,
+      `radius ${s.borderTopLeftRadius}`,
+      `pad ${s.padding}`
+    ].join(" · ");
+  }
+  function updatePathLabel(el, event) {
+    if (!el) {
+      pathLabel.style.display = "none";
+      return;
+    }
+    pathLine.textContent = `${el.tagName.toLowerCase()} ${buildSelector(el)}`.trim();
+    cssLine.textContent = describeCss(el);
+    pathLabel.style.display = "block";
+    pathLabel.style.left = "0px";
+    pathLabel.style.top = "0px";
+    const width = pathLabel.offsetWidth;
+    const height = pathLabel.offsetHeight;
+    let left = event.clientX + 14;
+    let top = event.clientY + 18;
+    if (left + width > window.innerWidth - 8)
+      left = Math.max(8, event.clientX - width - 14);
+    if (top + height > window.innerHeight - 8)
+      top = Math.max(8, event.clientY - height - 14);
+    pathLabel.style.left = `${left}px`;
+    pathLabel.style.top = `${top}px`;
+  }
   function onMouseMove(event) {
     if (locked || done)
       return;
@@ -128,6 +184,7 @@
     if (!el || root.contains(el))
       return;
     updateHighlight(el);
+    updatePathLabel(el, event);
   }
   function onClick(event) {
     if (locked || done)
@@ -140,6 +197,7 @@
     event.stopImmediatePropagation();
     locked = true;
     updateHighlight(el);
+    updatePathLabel(null, event);
     const rect = el.getBoundingClientRect();
     lockedRect = {
       top: rect.top,

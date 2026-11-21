@@ -1737,29 +1737,48 @@ function createAnnotationQueueStore() {
       if (!area)
         return;
       const result = await area.get([storageKey, historyStorageKey, inFlightStorageKey]);
+      // Scope keys are session ids. Entries persisted before that change were
+      // keyed by tab id; re-key them through the restored tab -> session claims.
+      const legacyKeyByTab = new Map;
+      for (const [claimedTabId, claim] of claimedTabs.entries())
+        if (claim?.sessionId)
+          legacyKeyByTab.set(Number(claimedTabId), claim.sessionId);
+      const scopeKeyOf = (key) => {
+        const numeric = Number(key);
+        if (Number.isFinite(numeric) && legacyKeyByTab.has(numeric))
+          return legacyKeyByTab.get(numeric);
+        return typeof key === "string" && key ? key : null;
+      };
       const entries = Array.isArray(result?.[storageKey]) ? result[storageKey] : [];
       queues.clear();
       for (const [tabId, list] of entries) {
-        if (!Number.isFinite(Number(tabId)) || !Array.isArray(list))
+        const scope = scopeKeyOf(tabId);
+        if (!scope || !Array.isArray(list))
           continue;
         const normalized = list.map(normalizeEntry).filter(Boolean);
-        if (normalized.length)
-          queues.set(Number(tabId), normalized);
+        if (normalized.length) {
+          const existing = queues.get(scope) || [];
+          queues.set(scope, existing.concat(normalized));
+        }
       }
       const historyEntries = Array.isArray(result?.[historyStorageKey]) ? result[historyStorageKey] : [];
       sendHistory.clear();
       for (const [tabId, list] of historyEntries) {
-        if (!Number.isFinite(Number(tabId)) || !Array.isArray(list))
+        const scope = scopeKeyOf(tabId);
+        if (!scope || !Array.isArray(list))
           continue;
         const normalized = list.map(normalizeHistoryRecord).filter(Boolean).slice(0, MAX_SEND_HISTORY_PER_TAB);
-        if (normalized.length)
-          sendHistory.set(Number(tabId), normalized);
+        if (normalized.length) {
+          const existing = sendHistory.get(scope) || [];
+          sendHistory.set(scope, existing.concat(normalized).slice(0, MAX_SEND_HISTORY_PER_TAB));
+        }
       }
       const inFlightEntries = Array.isArray(result?.[inFlightStorageKey]) ? result[inFlightStorageKey] : [];
       inFlightSends.clear();
       let recovered = false;
-      for (const [tabId, snapshot] of inFlightEntries) {
-        if (!Number.isFinite(Number(tabId)))
+      for (const [scopeKey, snapshot] of inFlightEntries) {
+        const scope = scopeKeyOf(scopeKey);
+        if (!scope)
           continue;
         const normalized = normalizeInFlight(snapshot);
         if (!normalized)
@@ -1769,14 +1788,13 @@ function createAnnotationQueueStore() {
         // destructively cleared, so whatever is still queued is intact: recover
         // by recording the interruption as a failed/partial attempt instead of
         // silently losing the batch.
-        const numericTabId = Number(tabId);
-        const queuedIds = new Set((queues.get(numericTabId) || []).map((entry) => entry.id));
+        const queuedIds = new Set((queues.get(scope) || []).map((entry) => entry.id));
         const stillQueued = normalized.entryIds.filter((id) => queuedIds.has(id)).length;
         const delivered = Math.max(0, normalized.totalCount - stillQueued);
         // Recovery snapshots cover only the still-queued entries (delivered
         // payloads are already gone); Copy on this attempt copies that subset.
-        const recoverySnapshots = (queues.get(numericTabId) || []).filter((entry) => normalized.entryIds.includes(entry.id)).map(toQueueSummary);
-        pushHistoryRecord(numericTabId, {
+        const recoverySnapshots = (queues.get(scope) || []).filter((entry) => normalized.entryIds.includes(entry.id)).map(toQueueSummary);
+        pushHistoryRecord(scope, {
           attemptId: normalized.attemptId,
           timestamp: normalized.timestamp,
           status: stillQueued === 0 ? "sent" : delivered > 0 ? "partial" : "failed",
@@ -1792,12 +1810,14 @@ function createAnnotationQueueStore() {
         await save();
     },
     list(tabId) {
-      if (tabId === undefined)
+      if (tabId == null)
         return [];
       const list = queues.get(tabId);
       return list ? list.slice() : [];
     },
     async add(tabId, entry) {
+      if (tabId == null)
+        return null;
       const normalized = normalizeEntry(entry);
       if (!normalized)
         return null;
@@ -1808,6 +1828,8 @@ function createAnnotationQueueStore() {
       return normalized.id;
     },
     async update(tabId, id, patch) {
+      if (tabId == null)
+        return false;
       const list = queues.get(tabId);
       if (!list)
         return false;
@@ -1820,6 +1842,8 @@ function createAnnotationQueueStore() {
       return true;
     },
     async remove(tabId, id) {
+      if (tabId == null)
+        return false;
       const list = queues.get(tabId);
       if (!list)
         return false;
@@ -1834,6 +1858,8 @@ function createAnnotationQueueStore() {
       return true;
     },
     async clear(tabId) {
+      if (tabId == null)
+        return false;
       if (!queues.delete(tabId))
         return false;
       await save();
@@ -1846,20 +1872,20 @@ function createAnnotationQueueStore() {
       return list;
     },
     listHistory(tabId) {
-      if (tabId === undefined)
+      if (tabId == null)
         return [];
       const list = sendHistory.get(tabId);
       return list ? list.slice() : [];
     },
     async clearHistory(tabId) {
-      if (tabId === undefined || !sendHistory.has(tabId))
+      if (tabId == null || !sendHistory.has(tabId))
         return false;
       sendHistory.delete(tabId);
       await save();
       return true;
     },
     async removeHistoryAttempt(tabId, attemptId) {
-      if (tabId === undefined || !sendHistory.has(tabId))
+      if (tabId == null || !sendHistory.has(tabId))
         return false;
       const list = sendHistory.get(tabId);
       const next = list.filter((record) => record.attemptId !== attemptId);
@@ -1873,19 +1899,19 @@ function createAnnotationQueueStore() {
       return true;
     },
     async recordAttempt(tabId, record) {
-      if (tabId === undefined)
+      if (tabId == null)
         return null;
       const stored = pushHistoryRecord(tabId, record);
       await save();
       return stored;
     },
     getInFlight(tabId) {
-      if (tabId === undefined)
+      if (tabId == null)
         return null;
       return inFlightSends.get(tabId) || null;
     },
     async setInFlight(tabId, snapshot) {
-      if (tabId === undefined)
+      if (tabId == null)
         return null;
       const normalized = normalizeInFlight(snapshot);
       if (!normalized)
@@ -1895,7 +1921,7 @@ function createAnnotationQueueStore() {
       return normalized;
     },
     async clearInFlight(tabId) {
-      if (tabId === undefined || !inFlightSends.has(tabId))
+      if (tabId == null || !inFlightSends.has(tabId))
         return false;
       inFlightSends.delete(tabId);
       await save();
@@ -1911,6 +1937,13 @@ function createAnnotationQueueStore() {
 // extension-src/background.ts
 var claimedTabs = createClaimsStore();
 var annotationQueues = createAnnotationQueueStore();
+// Queue/history scope is the connected session, not the tab: switching the
+// tab to another chat starts that chat's own queue and history.
+function queueScopeForTab(tabId) {
+  if (tabId === undefined || tabId === null)
+    return null;
+  return claimedTabs.get(tabId)?.sessionId || null;
+}
 var extensionVersion = chrome.runtime.getManifest().version;
 var monitor = createConnectionMonitor({
   claimedTabs,
@@ -1980,26 +2013,16 @@ async function sendQueuedAnnotations(tab, { pageToast = true } = {}) {
   // one-by-one only after each POST succeeds. Any throw — or a worker restart
   // between snapshot and completion — leaves unsent entries in the store, and
   // the persisted in-flight snapshot lets restore() recover the attempt.
-  const entries = annotationQueues.list(tab.id);
+  const claim = claimedTabs.get(tab.id);
+  if (!claim?.baseUrl || !claim?.sessionId)
+    throw new Error("Tab is not connected to an OpenCode instance");
+  const scope = claim.sessionId;
+  const entries = annotationQueues.list(scope);
   if (!entries.length)
     return { ok: true, sent: 0 };
-  const claim = claimedTabs.get(tab.id);
-  if (!claim?.baseUrl || !claim?.sessionId) {
-    await annotationQueues.recordAttempt(tab.id, {
-      attemptId: nextSendAttemptId(),
-      timestamp: Date.now(),
-      status: "failed",
-      sentCount: 0,
-      totalCount: entries.length,
-      error: "Tab is not connected to an OpenCode instance",
-      entryIds: entries.map((entry) => entry.id),
-      snapshots: entries.map(toQueueSummary)
-    });
-    throw new Error("Tab is not connected to an OpenCode instance");
-  }
   const attemptId = nextSendAttemptId();
   const timestamp = Date.now();
-  await annotationQueues.setInFlight(tab.id, {
+  await annotationQueues.setInFlight(scope, {
     attemptId,
     timestamp,
     entryIds: entries.map((entry) => entry.id),
@@ -2023,14 +2046,14 @@ async function sendQueuedAnnotations(tab, { pageToast = true } = {}) {
             screenshot: entry.screenshot
           }
         });
-        await annotationQueues.remove(tab.id, entry.id);
+        await annotationQueues.remove(scope, entry.id);
         sent += 1;
       } catch (error) {
         failure = error instanceof Error ? error : new Error(String(error));
         break;
       }
     }
-    await annotationQueues.clearInFlight(tab.id);
+    await annotationQueues.clearInFlight(scope);
     if (failure) {
       const record = {
         attemptId,
@@ -2042,7 +2065,7 @@ async function sendQueuedAnnotations(tab, { pageToast = true } = {}) {
         entryIds: entries.map((entry) => entry.id),
         snapshots: entries.map(toQueueSummary)
       };
-      await annotationQueues.recordAttempt(tab.id, record);
+      await annotationQueues.recordAttempt(scope, record);
       warnExtension("Failed to send queued annotations", {
         tabId: tab.id,
         sent,
@@ -2051,7 +2074,7 @@ async function sendQueuedAnnotations(tab, { pageToast = true } = {}) {
       });
       await showAnnotationError(tab.id, `Failed to send queued annotations (${sent} of ${entries.length} delivered): ${failure.message}`).catch(() => {});
       await injectConnectionOverlay(tab.id, true).catch(() => {});
-      const unsent = annotationQueues.list(tab.id).map(toQueueSummary);
+      const unsent = annotationQueues.list(scope).map(toQueueSummary);
       return { ok: false, sent, failed: entries.length - sent, error: failure.message, unsent, history: record };
     }
     const record = {
@@ -2064,7 +2087,7 @@ async function sendQueuedAnnotations(tab, { pageToast = true } = {}) {
       entryIds: entries.map((entry) => entry.id),
       snapshots: entries.map(toQueueSummary)
     };
-    await annotationQueues.recordAttempt(tab.id, record);
+    await annotationQueues.recordAttempt(scope, record);
     logExtension("Queued annotations delivered to OpenCode instance", {
       tabId: tab.id,
       baseUrl: claim.baseUrl,
@@ -2124,14 +2147,17 @@ async function runMessageAction(message, tab, sender) {
     if (typeof message.id !== "string" || !message.id)
       throw new Error("id is required");
     const comment = typeof message.comment === "string" ? message.comment : "";
-    const updated = await annotationQueues.update(tab.id, message.id, { comment });
+    const scope = queueScopeForTab(tab?.id);
+    if (!scope)
+      throw new Error("Tab is not connected to an OpenCode instance");
+    const updated = await annotationQueues.update(scope, message.id, { comment });
     return { ok: true, updated };
   }
   if (message.type === "queue_shots") {
     if (tab?.id === undefined)
       throw new Error("No active tab found");
     const shots = {};
-    for (const entry of annotationQueues.list(tab.id)) {
+    for (const entry of annotationQueues.list(queueScopeForTab(tab?.id))) {
       if (entry?.screenshot?.dataUrl && entry.id)
         shots[entry.id] = entry.screenshot.dataUrl;
     }
@@ -2141,9 +2167,12 @@ async function runMessageAction(message, tab, sender) {
     if (tab?.id === undefined)
       throw new Error("No active tab found");
     const attemptId = typeof message.attemptId === "string" ? message.attemptId : "";
-    const cleared = attemptId
-      ? await annotationQueues.removeHistoryAttempt(tab.id, attemptId)
-      : await annotationQueues.clearHistory(tab.id);
+    const scope = queueScopeForTab(tab?.id);
+    const cleared = !scope
+      ? false
+      : attemptId
+        ? await annotationQueues.removeHistoryAttempt(scope, attemptId)
+        : await annotationQueues.clearHistory(scope);
     return { ok: true, cleared };
   }
   if (message.type === "panel_visibility") {
@@ -2154,15 +2183,16 @@ async function runMessageAction(message, tab, sender) {
   if (message.type === "panel_get_state") {
     const tabId = tab?.id;
     const claim = tabId !== undefined ? claimedTabs.get(tabId) || null : null;
+    const scope = queueScopeForTab(tabId);
     const activity = await fetchClaimActivity(claim);
     return {
       ok: true,
       tab: tabId !== undefined ? { id: tabId, url: tab.url, title: tab.title } : null,
       claim,
       activity,
-      queue: tabId !== undefined ? annotationQueues.list(tabId).map(toQueueSummary) : [],
-      history: tabId !== undefined ? annotationQueues.listHistory(tabId) : [],
-      inFlight: tabId !== undefined ? annotationQueues.getInFlight(tabId) : null,
+      queue: scope ? annotationQueues.list(scope).map(toQueueSummary) : [],
+      history: scope ? annotationQueues.listHistory(scope) : [],
+      inFlight: scope ? annotationQueues.getInFlight(scope) : null,
       selection: tabId !== undefined ? selectionSessions.get(tabId) || null : null
     };
   }
@@ -2232,7 +2262,7 @@ async function runMessageAction(message, tab, sender) {
       session.viewport = message.viewport || null;
       try {
         const tab = await chrome.tabs.get(selectionTabId);
-        const shot = await captureVisibleTabWithTimeout(tab.windowId);
+        const shot = await captureWithoutHighlight(selectionTabId, tab.windowId);
         const cropped = await cropScreenshot(selectionTabId, shot, session.element?.rect, session.viewport);
         session.previewUrl = cropped || shot || null;
       } catch (error) {
@@ -2277,20 +2307,21 @@ async function runMessageAction(message, tab, sender) {
     if (!tab.id)
       throw new Error("No active tab found");
     await injectConnectionOverlay(tab.id, true);
-    return { ok: true, queued: annotationQueues.list(tab.id).length };
+    return { ok: true, queued: annotationQueues.list(queueScopeForTab(tab.id)).length };
   }
   if (message.type === "remove_queued_annotation") {
     if (!tab.id)
       throw new Error("No active tab found");
-    await annotationQueues.remove(tab.id, message.id);
+    await annotationQueues.remove(queueScopeForTab(tab.id), message.id);
     await injectConnectionOverlay(tab.id, true);
     return { ok: true };
   }
   if (message.type === "clear_queue") {
     if (!tab.id)
       throw new Error("No active tab found");
-    const hadEntries = annotationQueues.list(tab.id).length > 0;
-    await annotationQueues.clear(tab.id);
+    const scope = queueScopeForTab(tab.id);
+    const hadEntries = annotationQueues.list(scope).length > 0;
+    await annotationQueues.clear(scope);
     await injectConnectionOverlay(tab.id, hadEntries);
     return { ok: true };
   }
@@ -2304,7 +2335,7 @@ async function runMessageAction(message, tab, sender) {
   if (message.type === "get_queue_for_copy") {
     if (!tab.id)
       throw new Error("No active tab found");
-    const annotations = annotationQueues.list(tab.id).map(toQueueSummary);
+    const annotations = annotationQueues.list(queueScopeForTab(tab.id)).map(toQueueSummary);
     const screenshotsRetained = annotations.filter((entry) => entry.hasScreenshot).length;
     return { ok: true, annotations, screenshotsRetained };
   }
@@ -2418,6 +2449,15 @@ async function cropScreenshot(tabId, dataUrl, rect, viewport) {
     return results[0]?.result || null;
   } catch {
     return null;
+  }
+}
+async function captureWithoutHighlight(tabId, windowId) {
+  await sendSelectionCommand(tabId, "opc_selection_hide_highlight");
+  await new Promise((resolve) => setTimeout(resolve, 60));
+  try {
+    return await captureVisibleTabWithTimeout(windowId);
+  } finally {
+    await sendSelectionCommand(tabId, "opc_selection_show_highlight");
   }
 }
 async function captureVisibleTabWithTimeout(windowId, timeoutMs = 1e4) {
