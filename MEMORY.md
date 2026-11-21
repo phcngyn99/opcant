@@ -182,3 +182,15 @@ Newest last. Do not edit or delete entries; correct mistakes with a new entry.
 - The user's plugin server port moves between OpenCode launches (39241 →
   39240); discovery handles it, but a hardcoded baseUrl in test scripts goes
   stale between days.
+
+## 2026-11-21 — bullseye icon; session × polish
+
+- manifest now declares icons/ + action.default_icon with a generated bullseye
+  (red/white rings, pure-Python PNG renderer, 8x supersample, 16/32/48/128).
+  This overrides the earlier "no icons shipped" rule — the toolbar shows the
+  bullseye instead of Chrome's default tile. The old speech-bubble PNGs that
+  were still on disk were overwritten.
+- Session rows: × carries an 8px right inset and turns red on hover
+  (--red-ink on transparent). Icon files must be copied into the test copy's
+  icons/ subdirectory, not its root — a root-level cp is why loadUnpacked
+  briefly failed on icon32.
