@@ -122,7 +122,7 @@ function sessionsNode() {
   const root = h("div", { className: "section" });
   root.appendChild(h("div", { className: "header" }, [
     h("div", { className: "row" }, [
-      h("div", { className: "title", text: "Connect this tab to a chat" })
+      h("div", { className: "title", text: "Connect to a chat" })
     ]),
     h("div", { className: "row" }, [
       themeButtonNode(),
