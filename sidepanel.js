@@ -685,10 +685,23 @@ function selectionNode() {
     return null;
   const root = h("div", { className: "card" });
   const info = selection.element || {};
+  const path = `${info.tag || ""} ${info.selector || ""}`.trim() || "Selected element";
   root.appendChild(h("div", { className: "element-row" }, [
-    h("div", {
+    h("button", {
       className: "element-info grow",
-      text: `${info.tag || ""} ${info.selector || ""}`.trim() || "Selected element"
+      text: path,
+      attrs: { type: "button", title: `${path} — click to copy` },
+      disabled: state.pending,
+      on: {
+        click: async () => {
+          try {
+            await copyTextToClipboard(path);
+            toast("success", "Path copied");
+          } catch (error) {
+            toast("error", error?.message ? `Copy failed: ${error.message}` : "Copy failed");
+          }
+        }
+      }
     }),
     h("button", {
       className: "btn small",
@@ -706,7 +719,7 @@ function selectionNode() {
   const agent = agentLabel(state.claim?.agent);
   const textarea = h("textarea", {
     className: "textarea",
-    attrs: { placeholder: `What should ${agent} change here?`, "aria-label": `Instruction for ${agent}` }
+    attrs: { placeholder: "Describe the change", "aria-label": `Instruction for ${agent}` }
   });
   textarea.value = state.draft;
   textarea.addEventListener("input", () => {
