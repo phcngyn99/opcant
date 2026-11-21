@@ -13,19 +13,6 @@
     "z-index:2147483647",
     "pointer-events:none"
   ].join(";");
-  const bullseyeSvg = [
-    '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">',
-    '<circle cx="16" cy="16" r="15" fill="#d93a2b"/>',
-    '<circle cx="16" cy="16" r="11.5" fill="#fafafa"/>',
-    '<circle cx="16" cy="16" r="8" fill="#d93a2b"/>',
-    '<circle cx="16" cy="16" r="4.5" fill="#fafafa"/>',
-    '<circle cx="16" cy="16" r="2" fill="#d93a2b"/>',
-    "</svg>"
-  ].join("");
-  const bullseyeCursor = `url("data:image/svg+xml,${encodeURIComponent(bullseyeSvg)}") 16 16, crosshair`;
-  const cursorStyle = document.createElement("style");
-  cursorStyle.textContent = `* { cursor: ${bullseyeCursor} !important; }`;
-  document.documentElement.appendChild(cursorStyle);
   const box = document.createElement("div");
   box.style.cssText = [
     "position:fixed",
@@ -110,6 +97,14 @@
 
   let locked = false;
   let done = false;
+  let lockedRect = null;
+  function applyHighlightRect(rect) {
+    box.style.display = "block";
+    box.style.top = `${rect.top}px`;
+    box.style.left = `${rect.left}px`;
+    box.style.width = `${rect.width}px`;
+    box.style.height = `${rect.height}px`;
+  }
   function send(payload) {
     try {
       chrome.runtime.sendMessage(payload);
@@ -120,12 +115,7 @@
       box.style.display = "none";
       return;
     }
-    const rect = el.getBoundingClientRect();
-    box.style.display = "block";
-    box.style.top = `${rect.top}px`;
-    box.style.left = `${rect.left}px`;
-    box.style.width = `${rect.width}px`;
-    box.style.height = `${rect.height}px`;
+    applyHighlightRect(el.getBoundingClientRect());
   }
   function resetHighlightStyle() {
     box.style.borderColor = "rgba(165,180,252,0.95)";
@@ -150,6 +140,13 @@
     event.stopImmediatePropagation();
     locked = true;
     updateHighlight(el);
+    const rect = el.getBoundingClientRect();
+    lockedRect = {
+      top: rect.top,
+      left: rect.left,
+      width: rect.width,
+      height: rect.height
+    };
     box.style.borderColor = "rgba(74,222,128,0.95)";
     box.style.background = "rgba(74,222,128,0.15)";
     send({
@@ -174,6 +171,16 @@
       sendResponse({ ok: true });
       return;
     }
+    if (message.type === "opc_selection_hide_highlight" && locked && !done) {
+      box.style.display = "none";
+      sendResponse({ ok: true });
+      return;
+    }
+    if (message.type === "opc_selection_show_highlight" && locked && !done && lockedRect) {
+      applyHighlightRect(lockedRect);
+      sendResponse({ ok: true });
+      return;
+    }
     if (message.type === "opc_selection_exit" && !done) {
       cleanup();
       sendResponse({ ok: true, exited: true });
@@ -190,7 +197,6 @@
       chrome.runtime.onMessage.removeListener(onMessage);
     } catch {}
     root.remove();
-    cursorStyle.remove();
     if (globalThis.__opc_selection === api)
       globalThis.__opc_selection = null;
   }
