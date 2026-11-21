@@ -171,3 +171,14 @@ Newest last. Do not edit or delete entries; correct mistakes with a new entry.
   request: the plugin's `running` flag comes from the activity map and can be
   stale or wrong; dimming a live chat is worse than uniform rows.
   Running-first sort stays.
+
+## 2026-11-21 — per-session close in the picker
+
+- Each picker row carries an × (hover-revealed, same pattern as queue rows)
+  that closes that OpenCode session: close_session → POST /session/close on
+  the owning plugin instance, list re-fetched after. Rows without baseUrl
+  (preview stubs) render no button. Background already disconnects tabs
+  claimed by a closed session, so no extra handling was needed.
+- The user's plugin server port moves between OpenCode launches (39241 →
+  39240); discovery handles it, but a hardcoded baseUrl in test scripts goes
+  stale between days.
