@@ -2,8 +2,8 @@ const state = {
   loading: true,
   theme: "light",
   queueMenu: false,
-  chatMenu: false,
-  closeInactiveConfirm: false,
+  queueOpen: true,
+  historyOpen: true,
   queueShots: {},
   editingQueueId: null,
   editHeight: 0,
@@ -31,11 +31,6 @@ const state = {
   animateChipsTimer: null,
   animateList: false,
   animateListTimer: null,
-  selectMode: false,
-  selectedSessionIds: new Set(),
-  selectionAnchorId: null,
-  confirmBulkClose: false,
-  confirmBulkTimer: null,
   lastView: null,
   draft: "",
   pending: false,
@@ -95,6 +90,7 @@ const ICON_PATHS = {
   spinner: '<circle cx="6" cy="6" r="4.4" stroke-dasharray="18 8" stroke-linecap="round"/>',
   alert: '<path d="M6 1.4L11 10.6H1z"/><path d="M6 4.6v2.6M6 8.6v.1"/>',
   dash: '<path d="M2.4 6h7.2"/>',
+  chevron: '<path d="M3 4.5L6 7.5L9 4.5"/>',
   clock: '<circle cx="6" cy="6" r="4.6"/><path d="M6 3.4V6l1.8 1.2"/>',
   dot: '<circle cx="6" cy="6" r="2"/>',
   back: '<path d="M10 6H2M5.2 2.8L2 6l3.2 3.2"/>',
@@ -245,6 +241,7 @@ async function refreshState() {
     if (tab?.id) {
       const response = await chrome.runtime.sendMessage({ type: "panel_get_state", tabId: tab.id });
       if (response?.ok) {
+        const hadClaim = Boolean(state.claim);
         const previousPhase = state.selection?.phase;
         const previousActivityState = state.activity?.state || null;
         state.tab = response.tab;
@@ -259,6 +256,8 @@ async function refreshState() {
         state.selection = response.selection;
         if (!response.selection)
           state.draft = "";
+        if (hadClaim && !response.claim && !state.fetchingSessions)
+          void fetchSessions();
         if (previousPhase !== "locked" && response.selection?.phase === "locked")
           state.focusTextarea = true;
         applyActivityChange(previousActivityState);
@@ -596,36 +595,6 @@ async function copySingle(id) {
   render();
 }
 
-function formatHistoryMarkdown(attempt) {
-  const snapshots = Array.isArray(attempt?.snapshots) ? attempt.snapshots : [];
-  const status = attempt?.status === "sent" ? "sent" : attempt?.status === "partial" ? "partial" : "failed";
-  const header = status === "sent"
-    ? [`# Sent annotations (${snapshots.length}), paste into your chat`, ""].join("\n")
-    : [`# Annotation attempt ${status} (${snapshots.length}), paste into your chat`, ""].join("\n");
-  const blocks = snapshots.map((entry, index) => formatAnnotationBlock(entry, index, snapshots.length));
-  return `${header}\n${blocks.join("\n\n---\n\n")}\n`;
-}
-
-async function copyHistoryAttempt(attempt) {
-  if (state.copying)
-    return;
-  const snapshots = Array.isArray(attempt?.snapshots) ? attempt.snapshots : [];
-  if (!snapshots.length) {
-    toast("error", "No snapshot for this attempt");
-    return;
-  }
-  state.copying = true;
-  render();
-  try {
-    await copyTextToClipboard(formatHistoryMarkdown(attempt));
-    toast("success", snapshots.length === 1 ? "Copied 1 annotation" : `Copied ${snapshots.length} annotations`);
-  } catch (error) {
-    toast("error", error?.message ? `Copy failed: ${error.message}` : "Copy failed. Select and copy manually.");
-  }
-  state.copying = false;
-  render();
-}
-
 function projectNameFor(directory) {
   const segments = (directory || "").split("/").filter(Boolean);
   return segments.length ? segments[segments.length - 1] : directory || "Unknown project";
@@ -690,24 +659,19 @@ function actionNode() {
       className: `btn grow${hasQueue ? "" : " primary"}`,
       attrs: { type: "button" },
       on: { click: startAnnotation }
-    }, [icon("crosshair"), h("span", { text: hasQueue ? "Select another element" : "Select element" })]),
+    }, [icon("crosshair"), h("span", { text: hasQueue ? "Select again" : "Select" })]),
     state.addedTick ? addedTickNode() : null
   ]);
 }
 
 function sendBarNode() {
   const count = state.queue.length;
-  if (!count)
-    return null;
-  const composing = state.selection?.phase === "locked";
-  const label = "Send";
-  if (state.pending)
-    label = "Sending…";
+  const label = state.pending ? "Sending…" : "Send";
   return h("div", { className: "send-bar" }, [
     h("button", {
-      className: "btn full send",
-      attrs: { type: "button" },
-      disabled: state.pending,
+      className: `btn full send${count ? "" : " empty"}`,
+      attrs: { type: "button", title: count ? undefined : "Queue is empty" },
+      disabled: state.pending || !count,
       on: { click: sendQueue }
     }, [icon("send"), h("span", { text: label })])
   ]);
@@ -721,10 +685,23 @@ function selectionNode() {
     return null;
   const root = h("div", { className: "card" });
   const info = selection.element || {};
+  const path = `${info.tag || ""} ${info.selector || ""}`.trim() || "Selected element";
   root.appendChild(h("div", { className: "element-row" }, [
-    h("div", {
+    h("button", {
       className: "element-info grow",
-      text: `${info.tag || ""} ${info.selector || ""}`.trim() || "Selected element"
+      text: path,
+      attrs: { type: "button", title: `${path} — click to copy` },
+      disabled: state.pending,
+      on: {
+        click: async () => {
+          try {
+            await copyTextToClipboard(path);
+            toast("success", "Path copied");
+          } catch (error) {
+            toast("error", error?.message ? `Copy failed: ${error.message}` : "Copy failed");
+          }
+        }
+      }
     }),
     h("button", {
       className: "btn small",
@@ -742,7 +719,7 @@ function selectionNode() {
   const agent = agentLabel(state.claim?.agent);
   const textarea = h("textarea", {
     className: "textarea",
-    attrs: { placeholder: `What should ${agent} change here?`, "aria-label": `Instruction for ${agent}` }
+    attrs: { placeholder: "Describe the change", "aria-label": `Instruction for ${agent}` }
   });
   textarea.value = state.draft;
   textarea.addEventListener("input", () => {
@@ -778,6 +755,7 @@ function queueNode() {
     return null;
   const root = h("div", { className: "section" });
   root.appendChild(h("div", { className: "section-head" }, [
+    sectionToggleNode("queue", state.queueOpen),
     h("div", { className: "title grow" }, [
       h("span", { text: "Queue" }),
       h("span", { className: "count", text: String(state.queue.length) })
@@ -821,7 +799,7 @@ function queueNode() {
       }, [icon("copy"), h("span", { text: state.queue.length === 1 ? "Copy unsent annotation" : `Copy ${state.queue.length} unsent` })])
     ]));
   }
-  const listContainer = h("div", { className: "list cards" });
+  const listContainer = h("div", { className: `list cards${state.queueOpen ? "" : " collapsed"}` });
   state.queue.forEach((entry, index) => {
     const rawComment = typeof entry.comment === "string" ? entry.comment.trim() : "";
     const label = `${entry.tag || ""} ${entry.selector || ""}`.trim() || "element";
@@ -952,14 +930,15 @@ function historyItemNode(attempt) {
       retry,
       h("button", {
         className: "icon-btn",
+        text: "×",
         attrs: {
           type: "button",
-          "aria-label": "Copy this attempt's annotations to clipboard",
-          title: snapshots.length ? "Copy this attempt's annotations" : "No snapshot for this attempt"
+          "aria-label": `Clear sent record ${attempt?.attemptId || ""}`.trim() || "Clear sent record",
+          title: "Clear"
         },
-        disabled: state.copying || state.pending || !snapshots.length,
-        on: { click: () => copyHistoryAttempt(attempt) }
-      }, [icon("copy")])
+        disabled: state.pending,
+        on: { click: () => clearHistoryAttempt(attempt) }
+      })
     ])
   ]);
 }
@@ -969,6 +948,7 @@ function historyNode() {
     return null;
   const root = h("div", { className: "section" });
   root.appendChild(h("div", { className: "section-head" }, [
+    sectionToggleNode("sent", state.historyOpen),
     h("div", { className: "title grow" }, [
       h("span", { text: "Sent" }),
       h("span", { className: "count quiet", text: String(state.history.length) })
@@ -980,7 +960,7 @@ function historyNode() {
       on: { click: clearHistory }
     })
   ]));
-  const listContainer = h("div", { className: "list cards" });
+  const listContainer = h("div", { className: `list cards${state.historyOpen ? "" : " collapsed"}` });
   for (const attempt of state.history)
     listContainer.appendChild(historyItemNode(attempt));
   root.appendChild(listContainer);
@@ -1045,6 +1025,20 @@ function activityNode() {
       ? h("span", { className: "status-time", attrs: { "aria-live": "off" }, text: time })
       : null
   ]);
+}
+
+async function clearHistoryAttempt(attempt) {
+  const attemptId = attempt?.attemptId;
+  if (!attemptId)
+    return;
+  try {
+    const response = await sendPanelMessage({ type: "clear_history", attemptId });
+    if (!response?.ok)
+      throw new Error(response?.error || "Could not clear sent record");
+    await refreshState();
+  } catch (error) {
+    toast("error", error instanceof Error ? error.message : "Could not clear sent record");
+  }
 }
 
 async function clearHistory() {
@@ -1288,6 +1282,45 @@ async function readTheme() {
   }
 }
 
+async function readSectionPrefs() {
+  try {
+    const stored = await chrome.storage?.local?.get?.("sectionsOpen");
+    const open = stored?.sectionsOpen || {};
+    state.queueOpen = open.queue !== false;
+    state.historyOpen = open.sent !== false;
+  } catch {}
+}
+
+async function writeSectionPrefs() {
+  try {
+    await chrome.storage?.local?.set?.({
+      sectionsOpen: { queue: state.queueOpen, sent: state.historyOpen }
+    });
+  } catch {}
+}
+
+function toggleSection(section) {
+  if (section === "queue")
+    state.queueOpen = !state.queueOpen;
+  else
+    state.historyOpen = !state.historyOpen;
+  void writeSectionPrefs();
+  render();
+}
+
+function sectionToggleNode(section, open) {
+  return h("button", {
+    className: `icon-btn section-toggle${open ? "" : " closed"}`,
+    attrs: {
+      type: "button",
+      "aria-expanded": String(open),
+      "aria-label": open ? "Collapse" : "Expand",
+      title: open ? "Collapse" : "Expand"
+    },
+    on: { click: () => toggleSection(section) }
+  }, [icon("chevron")]);
+}
+
 function themeButtonNode() {
   const next = THEME_ORDER[(THEME_ORDER.indexOf(state.theme) + 1) % THEME_ORDER.length];
   return h("button", {
@@ -1312,6 +1345,7 @@ function cycleTheme() {
 
 (async () => {
   applyTheme(await readTheme());
+  await readSectionPrefs();
   await refreshState();
   fetchSessions();
 })();

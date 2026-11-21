@@ -19,7 +19,6 @@ architecture. Append to it; never rewrite history there.
 | `plugin/v2/index.js` | Forked plugin: HTTP server, `/activity`, `running` flag |
 | `vendor/astryx/` | Astryx neutral theme, verbatim, MIT |
 | `docs/install-guide.md` | Full install walkthrough |
-| `CUSTOM.md` | Every change against upstream |
 
 ## Commands
 
@@ -55,8 +54,9 @@ Also `?activity=working`, `?activity=failed`, and no query for the picker.
   show no relative time.
 - Reload pill appears only when a run finishes.
 - Theme toggle is two-state, remembered in `chrome.storage.local`.
-- Picker sorts running chats first and hides the close-inactive action when the
-  plugin does not report `running`; that action closes in one click.
+- Picker sorts running chats first. Rows are never grayed out: the plugin's
+  `running` flag can be stale, and dimming a live chat is worse than showing
+  every row the same.
 - `Clear queue` and `Copy all` stay enabled when idle; `Clear queue` refreshes
   panel state after draining.
 - Header stays one line at 340px.
@@ -97,7 +97,7 @@ Add a type to `MESSAGE_TYPE` in `background.js` or it is silently ignored.
 
 1. Branch from `develop`: `git checkout -b feature/<thing>`
 2. Change code, run the checks above
-3. Update `CUSTOM.md` and `README.md` when behaviour changes
+3. Update `README.md` when behaviour changes
 4. Append anything worth remembering to `MEMORY.md`
 5. PR into `develop`; promote `develop` → `main`
 

@@ -45,7 +45,6 @@ Newest last. Do not edit or delete entries; correct mistakes with a new entry.
   cached in `state.queueShots`.
 - Editing is inline with autosave: 700 ms debounce, blur saves, `Esc` discards,
   `Cmd+Enter` saves immediately. No Save/Cancel buttons.
-
 ## 2026-11-20 — picker
 
 - Sessions sort running first, then by recency.
@@ -116,3 +115,97 @@ Newest last. Do not edit or delete entries; correct mistakes with a new entry.
 - `.queue-edit` matches the row's `line-height: 1.5`, so editing adds no jump.
 - The row's captured height is kept as a min-height while editing, and the
   selector chip stays visible during the edit.
+
+## 2026-11-20 — block-scope ReferenceErrors in submitPanelAnnotation
+
+- `submitPanelAnnotation` had two same-class bugs: `cropped` and `tab` were
+  both `const`-declared inside `if (!dataUrl)` but read outside it, so every
+  panel submit threw `cropped is not defined` (log line) or, with a preview
+  captured, `tab is not defined` (queue payload). Fix: hoist both above the
+  `if`. Both bugs surfaced only in a full live run, not by `node --check`;
+  the verify-send-loss-proof harness does not cover the panel submit path.
+- Live-test setup that worked: install the extension in the chrome-devtools
+  MCP profile with `<all_urls>` added to `host_permissions` (CDP-synthesized
+  clicks never grant `activeTab`, and `captureVisibleTab` errors otherwise);
+  open `sidepanel.html` as a normal tab and send the panel messages with an
+  explicit `tabId` from that page; the visible tab must be the content page,
+  not the panel tab, or capture captures the wrong surface.
+
+## 2026-11-20 — picker `…` menu removed
+
+- The picker's session list is live from OpenCode: panel `fetchSessions` →
+  background `refresh_sessions` → `GET <plugin>/sessions` (ports 39240+).
+  User decision: with a live list, the `…` Chat actions menu (Close N inactive
+  + select-to-close mode) is redundant. Removed `closeInactiveNode`,
+  `selectToggleNode`, `bulkBarNode`, `closeInactiveSessions`,
+  `postCloseSession`, the select-mode machinery and its CSS
+  (`.session-select`, `.bulk-bar`, `.session-row.selected/.unselectable`).
+  Picker header now has only Theme + Refresh. Per-row connect unchanged.
+- Background `close_session` message type stays (still in MESSAGE_TYPE).
+
+## 2026-11-20 — Send button silently dead: `const label` reassigned in sendBarNode
+
+- `sendBarNode` did `const label = "Send"; if (state.pending) label = "Sending…"`.
+  Assigning to a `const` throws. First Send/Add click set `state.pending = true`,
+  the following `render()` threw inside `sendBarNode`, and the throw escaped
+  before `state.pending = false` — so `pending` stayed true forever and every
+  later render threw, freezing the whole panel DOM. Send, Add, even the theme
+  toggle went silently dead; `node --check` and the send-loss harness never
+  cover it because it is a runtime TypeError. Fix: `let label`.
+- Debugging trail that found it: CDP logpoint at the guard printed
+  `guard pending= true` and the console carried
+  `Uncaught (in promise) TypeError: Assignment to constant variable` with the
+  `sendBarNode` stack. Event-level instrumentation alone looked like "handler
+  not attached" — the stuck `pending` guard was the real early-return.
+
+## 2026-11-21 — CUSTOM.md removed; picker refreshes on return
+
+- CUSTOM.md removed at the user's request; the fork-change list now lives only
+  in README.md ("Features beyond upstream"). References updated in AGENTS.md
+  and README.md (layout table, update-flow step, licence note).
+- Picker session refresh on return: "Back to chats" only disconnected and
+  re-rendered, so the picker showed a stale list. `refreshState` now calls
+  `fetchSessions()` whenever a claim transitions to none (and
+  `fetchingSessions` is not already in flight).
+- The picker's gray-out of `running === false` rows was removed at the user's
+  request: the plugin's `running` flag comes from the activity map and can be
+  stale or wrong; dimming a live chat is worse than uniform rows.
+  Running-first sort stays.
+
+## 2026-11-21 — per-session close in the picker
+
+- Each picker row carries an × (hover-revealed, same pattern as queue rows)
+  that closes that OpenCode session: close_session → POST /session/close on
+  the owning plugin instance, list re-fetched after. Rows without baseUrl
+  (preview stubs) render no button. Background already disconnects tabs
+  claimed by a closed session, so no extra handling was needed.
+- The user's plugin server port moves between OpenCode launches (39241 →
+  39240); discovery handles it, but a hardcoded baseUrl in test scripts goes
+  stale between days.
+
+## 2026-11-21 — bullseye icon; session × polish
+
+- manifest now declares icons/ + action.default_icon with a generated bullseye
+  (red/white rings, pure-Python PNG renderer, 8x supersample, 16/32/48/128).
+  This overrides the earlier "no icons shipped" rule — the toolbar shows the
+  bullseye instead of Chrome's default tile. The old speech-bubble PNGs that
+  were still on disk were overwritten.
+- Session rows: × carries an 8px right inset and turns red on hover
+  (--red-ink on transparent). Icon files must be copied into the test copy's
+  icons/ subdirectory, not its root — a root-level cp is why loadUnpacked
+  briefly failed on icon32.
+
+## 2026-11-21 — Codex Annotate rebrand + restyle
+
+- Product renamed to "Codex Annotate" (manifest name/short_name/description,
+  README, install guide). Plugin server APP_ID stays
+  "opencode-chrome-annotation" — discovery depends on it, do not rename.
+- Panel restyled Codex-style: primary buttons are ink-on-paper monochrome
+  (Add/Send), Cancel is a hairline ghost, cards and session rows are flat
+  with inset hairline rings instead of drop shadows, focus rings are ink.
+  The page selection overlay lost lavender/green for neutral dark outlines.
+  Older one-off color tweaks (green Add, red-pink Cancel, blue Send) were
+  replaced by this system.
+- The test browser is shared with the user: panel state flips mid-verification
+  (their picks/cancels reset selection sessions). Verify with explicit tabIds
+  and re-check state right before asserting.

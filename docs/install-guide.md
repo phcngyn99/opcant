@@ -1,4 +1,4 @@
-# OpenCode Annotate — install and use
+# Codex Annotate — install and use
 
 Point at a UI element in Chrome, write a note, and your OpenCode agent gets a
 cropped screenshot plus the element's selector and metadata.
@@ -12,7 +12,7 @@ Verified on macOS with Chrome 158 and OpenCode 2.3.2.
 | Piece | Role |
 |---|---|
 | `opencode-annotate` npm plugin | Runs inside OpenCode, opens a local HTTP server on `127.0.0.1:39240-39260` |
-| OpenCode Annotate Chrome extension | Side panel in Chrome, captures the element and sends the annotation |
+| Codex Annotate Chrome extension | Side panel in Chrome, captures the element and sends the annotation |
 | OpenCode running in a project | Receives the annotation as a normal prompt |
 
 Everything is local. No account, no telemetry, no cloud round trip.
@@ -66,7 +66,7 @@ done
 
 1. Open <https://chromewebstore.google.com/detail/opencode-annotate/opcdjaoejpnkalealbpjabflbejpcmjh>
 2. Click **Add to Chrome** → **Add extension**.
-3. Click the puzzle icon in the toolbar and pin **OpenCode Annotate**.
+3. Click the puzzle icon in the toolbar and pin **Codex Annotate**.
 
 ### Option B — unpacked from source (development)
 
@@ -89,7 +89,7 @@ talk to the same plugin, so you do not need both.
 
 1. Start OpenCode in the project you are editing.
 2. Open the page you want to annotate in Chrome.
-3. Click the **OpenCode Annotate** icon. A side panel opens on the right.
+3. Click the **Codex Annotate** icon. A side panel opens on the right.
 4. Pick a chat from the list. This links the current tab to that OpenCode
    session.
 5. Click **Select element**, then click the element on the page.
